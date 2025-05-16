@@ -1,0 +1,16 @@
+services:
+  # default configuration for services in *this* file
+  _defaults:
+    autowire: true      # Automatically injects dependencies in your services.
+    autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+  AlipayFundAuthBundle\EventSubscriber\:
+    resource: '../../EventSubscriber/'
+  AlipayFundAuthBundle\Procedure\:
+    resource: '../../Procedure/'
+  AlipayFundAuthBundle\Repository\:
+    resource: '../../Repository/'
+  AlipayFundAuthBundle\Service\:
+    resource: '../../Service/'
+
+  Tourze\FileNameGenerator\RandomNameGenerator: ~
