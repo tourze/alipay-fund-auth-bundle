@@ -13,7 +13,6 @@
     "doctrine/orm": "^3.0",
     "doctrine/persistence": "^3.1 || ^4",
     "easycorp/easyadmin-bundle": "^4",
-    "guzzlehttp/guzzle": "^7.9.2",
     "knplabs/knp-menu": "^3.7",
     "nesbot/carbon": "^2.72 || ^3",
     "symfony/config": "^6.4",
