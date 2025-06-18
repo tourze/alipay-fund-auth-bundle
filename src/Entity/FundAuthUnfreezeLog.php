@@ -6,17 +6,11 @@ use AlipayFundAuthBundle\Repository\FundAuthUnfreezeLogRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
-use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 
-#[AsPermission(title: '解冻记录')]
 #[ORM\Entity(repositoryClass: FundAuthUnfreezeLogRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_unfreeze_log', options: ['comment' => '解冻记录'])]
 class FundAuthUnfreezeLog implements \Stringable
 {
-    #[ExportColumn]
-    #[ListColumn(order: -1, sorter: true)]
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
     #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]

@@ -5,15 +5,11 @@ namespace AlipayFundAuthBundle\Entity;
 use AlipayFundAuthBundle\Repository\TradeFundBillRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
 
 #[ORM\Entity(repositoryClass: TradeFundBillRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_fund_bill', options: ['comment' => '交易支付使用的资金渠道'])]
 class TradeFundBill implements \Stringable
 {
-    #[ListColumn(order: -1)]
-    #[ExportColumn]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => 'ID'])]

@@ -6,15 +6,11 @@ use AlipayFundAuthBundle\Enum\VoucherType;
 use AlipayFundAuthBundle\Repository\TradeVoucherDetailRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
 
 #[ORM\Entity(repositoryClass: TradeVoucherDetailRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_voucher_detail', options: ['comment' => '优惠券信息'])]
 class TradeVoucherDetail implements \Stringable
 {
-    #[ListColumn(order: -1)]
-    #[ExportColumn]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => 'ID'])]

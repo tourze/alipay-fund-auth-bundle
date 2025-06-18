@@ -13,20 +13,14 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
-use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 
 /**
  * @see https://opendocs.alipay.com/open/064jhk?scene=32f92b62c19b44cfaf3bf4d974fcbcf3&pathHash=1c57dd00
  */
-#[AsPermission(title: '统一交易订单')]
 #[ORM\Entity(repositoryClass: TradeOrderRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_order', options: ['comment' => '统一交易单'])]
 class TradeOrder implements \Stringable
 {
-    #[ExportColumn]
-    #[ListColumn(order: -1, sorter: true)]
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
     #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]

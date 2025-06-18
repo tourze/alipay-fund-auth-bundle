@@ -6,17 +6,11 @@ use AlipayFundAuthBundle\Repository\TradeGoodsDetailRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
-use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 
-#[AsPermission(title: '商品信息')]
 #[ORM\Entity(repositoryClass: TradeGoodsDetailRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_goods_detail', options: ['comment' => '商品信息'])]
 class TradeGoodsDetail implements \Stringable
 {
-    #[ExportColumn]
-    #[ListColumn(order: -1, sorter: true)]
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
     #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]

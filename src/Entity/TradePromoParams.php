@@ -5,15 +5,11 @@ namespace AlipayFundAuthBundle\Entity;
 use AlipayFundAuthBundle\Repository\TradePromoParamsRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
 
 #[ORM\Entity(repositoryClass: TradePromoParamsRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_promo_params', options: ['comment' => '优惠明细参数'])]
 class TradePromoParams implements \Stringable
 {
-    #[ListColumn(order: -1)]
-    #[ExportColumn]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => 'ID'])]

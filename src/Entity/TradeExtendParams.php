@@ -5,15 +5,11 @@ namespace AlipayFundAuthBundle\Entity;
 use AlipayFundAuthBundle\Repository\TradeExtendParamsRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
 
 #[ORM\Entity(repositoryClass: TradeExtendParamsRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_extend_params', options: ['comment' => '业务扩展参数'])]
 class TradeExtendParams implements \Stringable
 {
-    #[ListColumn(order: -1)]
-    #[ExportColumn]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => 'ID'])]
