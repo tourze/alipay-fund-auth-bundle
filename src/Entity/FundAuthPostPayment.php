@@ -14,7 +14,7 @@ use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 #[AsPermission(title: '后付费项目')]
 #[ORM\Entity(repositoryClass: FundAuthPostPaymentRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_post_payment', options: ['comment' => '后付费项目'])]
-class FundAuthPostPayment implements PlainArrayInterface
+class FundAuthPostPayment implements PlainArrayInterface, \Stringable
 {
     #[ExportColumn]
     #[ListColumn(order: -1, sorter: true)]
@@ -88,6 +88,11 @@ class FundAuthPostPayment implements PlainArrayInterface
         $this->description = $description;
 
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name ?? ($this->id ?? '');
     }
 
     public function retrievePlainArray(): array

@@ -16,7 +16,7 @@ use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 #[AsPermission(title: '预授权订单')]
 #[ORM\Entity(repositoryClass: FundAuthOrderRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_order', options: ['comment' => '预授权订单'])]
-class FundAuthOrder
+class FundAuthOrder implements \Stringable
 {
     #[ExportColumn]
     #[ListColumn(order: -1, sorter: true)]
@@ -30,49 +30,46 @@ class FundAuthOrder
     #[ORM\JoinColumn(nullable: false)]
     private ?Account $account = null;
 
-    /**
-     * 商家自定义需保证在商户端不重复。仅支持字母、数字、下划线。
-     */
     #[ORM\Column(length: 64, options: ['comment' => '商户授权资金订单号'])]
     private ?string $outOrderNo = null;
 
-    #[ORM\Column(length: 64)]
+    #[ORM\Column(length: 64, options: ['comment' => '商户本次资金授权请求的请求流水号'])]
     private ?string $outRequestNo = null;
 
-    #[ORM\Column(length: 100)]
+    #[ORM\Column(length: 100, options: ['comment' => '业务订单的简单描述'])]
     private ?string $orderTitle = null;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, options: ['comment' => '需要冻结的金额'])]
     private ?string $amount = null;
 
-    #[ORM\Column(length: 32)]
+    #[ORM\Column(length: 32, options: ['comment' => '销售产品码'])]
     private string $productCode = 'PREAUTH_PAY';
 
-    #[ORM\Column(length: 32, nullable: true)]
+    #[ORM\Column(length: 32, nullable: true, options: ['comment' => '收款方的支付宝用户号'])]
     private ?string $payeeUserId = null;
 
-    #[ORM\Column(length: 100, nullable: true)]
+    #[ORM\Column(length: 100, nullable: true, options: ['comment' => '收款方支付宝账号'])]
     private ?string $payeeLogonId = null;
 
-    #[ORM\Column(length: 5, nullable: true)]
+    #[ORM\Column(length: 5, nullable: true, options: ['comment' => '该笔订单允许的最晚付款时间'])]
     private ?string $payTimeout = null;
 
-    #[ORM\Column(length: 5, nullable: true)]
+    #[ORM\Column(length: 5, nullable: true, options: ['comment' => '冻结资金的有效期'])]
     private ?string $timeExpress = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, options: ['comment' => '业务扩展参数'])]
     private ?array $extraParam = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true, options: ['comment' => '商户传入业务信息'])]
     private ?array $businessParams = null;
 
-    #[ORM\Column(length: 128, nullable: true)]
+    #[ORM\Column(length: 128, nullable: true, options: ['comment' => '预授权业务场景'])]
     private ?string $sceneCode = null;
 
     #[ORM\Column(length: 8, nullable: true, options: ['comment' => '标价币种'])]
     private ?string $transCurrency = null;
 
-    #[ORM\Column(length: 8, nullable: true)]
+    #[ORM\Column(length: 8, nullable: true, options: ['comment' => '商户指定的结算币种'])]
     private ?string $settleCurrency = null;
 
     #[ORM\Column(length: 64, nullable: true, options: ['comment' => '支付宝的资金授权订单号'])]
@@ -84,7 +81,7 @@ class FundAuthOrder
     #[ORM\Column(length: 20, nullable: true, enumType: FundAuthOrderStatus::class, options: ['comment' => '资金预授权明细的状态'])]
     private FundAuthOrderStatus $status = FundAuthOrderStatus::INIT;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true, options: ['comment' => '资金授权成功时间'])]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['comment' => '资金授权成功时间'])]
     private ?\DateTimeInterface $gmtTrans = null;
 
     #[ORM\Column(length: 32, nullable: true, options: ['comment' => '付款方支付宝用户号'])]
@@ -113,6 +110,11 @@ class FundAuthOrder
         $this->postPayments = new ArrayCollection();
         $this->unfreezeLogs = new ArrayCollection();
         $this->trades = new ArrayCollection();
+    }
+
+    public function __toString(): string
+    {
+        return $this->outOrderNo ?? ($this->id ?? '');
     }
 
     public function getId(): ?string

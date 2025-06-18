@@ -37,8 +37,8 @@ class CreateAlipayPreauthTradeOrder extends LockableProcedure
         $model->setSubject($object->getSubject());
         $model->setProductCode($object->getProductCode());
         $model->setAuthNo($object->getAuthNo());
-        if ($object->getAuthConfirmMode()) {
-            $model->setAuthConfirmMode($object->getAuthConfirmMode());
+        if ($object->getAuthConfirmMode() !== null) {
+            $model->setAuthConfirmMode($object->getAuthConfirmMode()->value);
         }
 
         $goodsDetails = [];
@@ -69,8 +69,12 @@ class CreateAlipayPreauthTradeOrder extends LockableProcedure
         $object->setInvoiceAmount($result->getInvoiceAmount());
         $object->setGmtPayment(Carbon::parse($result->getGmtPayment()));
         $object->setStoreName($result->getStoreName());
-        $object->setAsyncPaymentMode($result->getAsyncPaymentMode());
-        $object->setAuthTradePayMode($result->getAuthTradePayMode());
+        if ($result->getAsyncPaymentMode() !== null) {
+            $object->setAsyncPaymentMode(\AlipayFundAuthBundle\Enum\AsyncPaymentMode::tryFrom($result->getAsyncPaymentMode()));
+        }
+        if ($result->getAuthTradePayMode() !== null) {
+            $object->setAuthTradePayMode(\AlipayFundAuthBundle\Enum\AuthTradePayMode::tryFrom($result->getAuthTradePayMode()));
+        }
         $object->setMdiscountAmount($result->getMdiscountAmount());
         $object->setDiscountAmount($result->getDiscountAmount());
 

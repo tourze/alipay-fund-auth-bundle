@@ -10,7 +10,7 @@ use Tourze\EasyAdmin\Attribute\Column\ListColumn;
 
 #[ORM\Entity(repositoryClass: TradeFundBillRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_fund_bill', options: ['comment' => '交易支付使用的资金渠道'])]
-class TradeFundBill
+class TradeFundBill implements \Stringable
 {
     #[ListColumn(order: -1)]
     #[ExportColumn]
@@ -23,13 +23,13 @@ class TradeFundBill
     #[ORM\JoinColumn(nullable: false)]
     private ?TradeOrder $tradeOrder = null;
 
-    #[ORM\Column(length: 32)]
+    #[ORM\Column(length: 32, options: ['comment' => '资金渠道'])]
     private ?string $fundChannel = null;
 
-    #[ORM\Column(length: 20)]
+    #[ORM\Column(length: 20, options: ['comment' => '该支付工具类型的使用金额'])]
     private ?string $amount = null;
 
-    #[ORM\Column(length: 20, nullable: true)]
+    #[ORM\Column(length: 20, nullable: true, options: ['comment' => '该支付工具类型的实际使用金额'])]
     private ?string $realAmount = null;
 
     public function getId(): ?int
@@ -83,5 +83,10 @@ class TradeFundBill
         $this->realAmount = $realAmount;
 
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        return $this->fundChannel ?? ($this->id !== null ? (string) $this->id : '');
     }
 }

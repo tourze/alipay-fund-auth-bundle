@@ -13,7 +13,7 @@ use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 #[AsPermission(title: '商品信息')]
 #[ORM\Entity(repositoryClass: TradeGoodsDetailRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_goods_detail', options: ['comment' => '商品信息'])]
-class TradeGoodsDetail
+class TradeGoodsDetail implements \Stringable
 {
     #[ExportColumn]
     #[ListColumn(order: -1, sorter: true)]
@@ -32,18 +32,12 @@ class TradeGoodsDetail
     #[ORM\Column(options: ['comment' => '商品数量'])]
     private ?int $quantity = null;
 
-    /**
-     * @var string|null 单位为元
-     */
     #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, options: ['comment' => '商品单价'])]
     private ?string $price = null;
 
     #[ORM\Column(length: 24, nullable: true, options: ['comment' => '商品类目'])]
     private ?string $goodsCategory = null;
 
-    /**
-     * @var string|null 从商品类目根节点到叶子节点的类目id组成，类目id值使用|分割
-     */
     #[ORM\Column(length: 128, nullable: true, options: ['comment' => '商品类目树'])]
     private ?string $categoryTree = null;
 
@@ -153,5 +147,10 @@ class TradeGoodsDetail
         $this->tradeOrder = $tradeOrder;
 
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        return $this->goodsName ?? ($this->goodsId ?? ($this->id ?? ''));
     }
 }

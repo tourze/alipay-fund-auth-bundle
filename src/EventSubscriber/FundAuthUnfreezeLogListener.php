@@ -30,14 +30,14 @@ class FundAuthUnfreezeLogListener
         $model->setOutRequestNo($object->getOutRequestNo());
         $model->setAmount($object->getAmount());
         $model->setRemark($object->getRemark());
-        if ($object->getExtraParam()) {
+        if ($object->getExtraParam() !== null && $object->getExtraParam() !== []) {
             $model->setExtraParam(json_encode($object->getExtraParam()));
         }
         $result = $api->unfreeze($model);
 
         $object->setOperationId($result->getOperationId());
         $object->setStatus($result->getStatus());
-        $object->setGmtTrans($result->getGmtTrans() ? Carbon::parse($result->getGmtTrans()) : null);
+        $object->setGmtTrans($result->getGmtTrans() !== null && $result->getGmtTrans() !== '' ? Carbon::parse($result->getGmtTrans()) : null);
         $object->setCreditAmount($result->getCreditAmount());
         $object->setFundAmount($result->getFundAmount());
     }

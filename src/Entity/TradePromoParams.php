@@ -10,7 +10,7 @@ use Tourze\EasyAdmin\Attribute\Column\ListColumn;
 
 #[ORM\Entity(repositoryClass: TradePromoParamsRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_promo_params', options: ['comment' => '优惠明细参数'])]
-class TradePromoParams
+class TradePromoParams implements \Stringable
 {
     #[ListColumn(order: -1)]
     #[ExportColumn]
@@ -23,10 +23,7 @@ class TradePromoParams
     #[ORM\JoinColumn(nullable: false)]
     private ?TradeOrder $tradeOrder = null;
 
-    /**
-     * 存在延迟扣款这一类的场景，用这个时间表明用户发生交易的时间，比如说，在公交地铁场景，用户刷码出站的时间，和商户上送交易的时间是不一样的。
-     */
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['comment' => '用户实际交易时间'])]
     private ?\DateTimeInterface $actualOrderTime = null;
 
     public function getId(): ?int
@@ -56,5 +53,10 @@ class TradePromoParams
         $this->actualOrderTime = $actualOrderTime;
 
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        return $this->id !== null ? (string) $this->id : '';
     }
 }

@@ -11,7 +11,7 @@ use Tourze\EasyAdmin\Attribute\Column\ListColumn;
 
 #[ORM\Entity(repositoryClass: TradeVoucherDetailRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_voucher_detail', options: ['comment' => '优惠券信息'])]
-class TradeVoucherDetail
+class TradeVoucherDetail implements \Stringable
 {
     #[ListColumn(order: -1)]
     #[ExportColumn]
@@ -33,21 +33,12 @@ class TradeVoucherDetail
     #[ORM\Column(length: 32, enumType: VoucherType::class, options: ['comment' => '券类型'])]
     private ?VoucherType $type = null;
 
-    /**
-     * @var string|null 它应该会等于商家出资加上其他出资方出资
-     */
     #[ORM\Column(length: 10, options: ['comment' => '优惠券面额'])]
     private ?string $amount = null;
 
-    /**
-     * @var string|null 特指发起交易的商家出资金额
-     */
     #[ORM\Column(length: 10, nullable: true, options: ['comment' => '商家出资'])]
     private ?string $merchantContribute = null;
 
-    /**
-     * @var string|null 可能是支付宝，可能是品牌商，或者其他方，也可能是他们的一起出资
-     */
     #[ORM\Column(length: 10, nullable: true, options: ['comment' => '其他出资方出资金额'])]
     private ?string $otherContribute = null;
 
@@ -57,22 +48,13 @@ class TradeVoucherDetail
     #[ORM\Column(length: 64, nullable: true, options: ['comment' => '券模板id'])]
     private ?string $templateId = null;
 
-    /**
-     * @var string|null 如果使用的这张券是用户购买的，则该字段代表用户在购买这张券时用户实际付款的金额
-     */
-    #[ORM\Column(length: 10, nullable: true)]
+    #[ORM\Column(length: 10, nullable: true, options: ['comment' => '购买券时用户实际付款金额'])]
     private ?string $purchaseBuyerContribute = null;
 
-    /**
-     * @var string|null 如果使用的这张券是用户购买的，则该字段代表用户在购买这张券时商户优惠的金额
-     */
-    #[ORM\Column(length: 10, nullable: true)]
+    #[ORM\Column(length: 10, nullable: true, options: ['comment' => '购买券时商户优惠金额'])]
     private ?string $purchaseMerchantContribute = null;
 
-    /**
-     * @var string|null 如果使用的这张券是用户购买的，则该字段代表用户在购买这张券时平台优惠的金额
-     */
-    #[ORM\Column(length: 10, nullable: true)]
+    #[ORM\Column(length: 10, nullable: true, options: ['comment' => '购买券时平台优惠金额'])]
     private ?string $purchaseAntContribute = null;
 
     public function getId(): ?int
@@ -222,5 +204,10 @@ class TradeVoucherDetail
         $this->purchaseAntContribute = $purchaseAntContribute;
 
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        return $this->name ?? ($this->voucherId ?? ($this->id !== null ? (string) $this->id : ''));
     }
 }

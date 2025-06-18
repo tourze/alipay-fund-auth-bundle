@@ -10,7 +10,7 @@ use Tourze\EasyAdmin\Attribute\Column\ListColumn;
 
 #[ORM\Entity(repositoryClass: TradeExtendParamsRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_extend_params', options: ['comment' => '业务扩展参数'])]
-class TradeExtendParams
+class TradeExtendParams implements \Stringable
 {
     #[ListColumn(order: -1)]
     #[ExportColumn]
@@ -23,15 +23,9 @@ class TradeExtendParams
     #[ORM\JoinColumn(nullable: false)]
     private ?TradeOrder $tradeOrder = null;
 
-    /**
-     * @var string|null 该参数作为系统商返佣数据提取的依据，请填写系统商签约协议的PID
-     */
     #[ORM\Column(length: 64, nullable: true, options: ['comment' => '系统商编号'])]
     private ?string $sysServiceProviderId = null;
 
-    /**
-     * @var string|null 特殊场景下，允许商户指定交易展示的卖家名称
-     */
     #[ORM\Column(length: 32, nullable: true, options: ['comment' => '卖家名称'])]
     private ?string $specifiedSellerName = null;
 
@@ -94,5 +88,10 @@ class TradeExtendParams
         $this->cardType = $cardType;
 
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        return $this->specifiedSellerName ?? ($this->id !== null ? (string) $this->id : '');
     }
 }

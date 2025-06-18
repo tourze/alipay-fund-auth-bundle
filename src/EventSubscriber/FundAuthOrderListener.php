@@ -2,7 +2,7 @@
 
 namespace AlipayFundAuthBundle\EventSubscriber;
 
-use Alipay\OpenAPISDK\Model\AlipayFundAuthOrderAppFreezeModel;
+use Alipay\OpenAPISDK\Model\AlipayFundAuthOrderFreezeModel;
 use Alipay\OpenAPISDK\Model\PostPayment;
 use AlipayFundAuthBundle\Entity\FundAuthOrder;
 use AlipayFundAuthBundle\Enum\FundAuthOrderStatus;
@@ -27,37 +27,37 @@ class FundAuthOrderListener
     {
         $api = $this->sdkService->getFundAuthOrderApi($object->getAccount());
 
-        $model = new AlipayFundAuthOrderAppFreezeModel();
+        $model = new AlipayFundAuthOrderFreezeModel();
         $model->setOutOrderNo($object->getOutOrderNo());
         $model->setOutRequestNo($object->getOutRequestNo());
         $model->setOrderTitle($object->getOrderTitle());
         $model->setAmount($object->getAmount());
         $model->setProductCode($object->getProductCode());
-        if ($object->getPayeeUserId()) {
+        if ($object->getPayeeUserId() !== null && $object->getPayeeUserId() !== '') {
             $model->setPayeeUserId($object->getPayeeUserId());
         }
-        if ($object->getPayeeLogonId()) {
+        if ($object->getPayeeLogonId() !== null && $object->getPayeeLogonId() !== '') {
             $model->setPayeeLogonId($object->getPayeeLogonId());
         }
-        if ($object->getPayTimeout()) {
+        if ($object->getPayTimeout() !== null && $object->getPayTimeout() !== '') {
             $model->setPayTimeout($object->getPayTimeout());
         }
-        if ($object->getTimeExpress()) {
+        if ($object->getTimeExpress() !== null && $object->getTimeExpress() !== '') {
             $model->setTimeoutExpress($object->getTimeExpress());
         }
-        if ($object->getExtraParam()) {
+        if ($object->getExtraParam() !== null && $object->getExtraParam() !== []) {
             $model->setExtraParam(json_encode($object->getExtraParam()));
         }
-        if ($object->getBusinessParams()) {
+        if ($object->getBusinessParams() !== null && $object->getBusinessParams() !== []) {
             $model->setBusinessParams(json_encode($object->getBusinessParams()));
         }
-        if ($object->getSceneCode()) {
+        if ($object->getSceneCode() !== null && $object->getSceneCode() !== '') {
             $model->setSceneCode($object->getSceneCode());
         }
-        if ($object->getTransCurrency()) {
+        if ($object->getTransCurrency() !== null && $object->getTransCurrency() !== '') {
             $model->setTransCurrency($object->getTransCurrency());
         }
-        if ($object->getSettleCurrency()) {
+        if ($object->getSettleCurrency() !== null && $object->getSettleCurrency() !== '') {
             $model->setSettleCurrency($object->getSettleCurrency());
         }
         $postPayments = [];
@@ -75,11 +75,11 @@ class FundAuthOrderListener
         $object->setAuthNo($result->getAuthNo());
         $object->setOperationId($result->getOperationId());
         $object->setStatus(FundAuthOrderStatus::from($result->getStatus()));
-        $object->setGmtTrans($result->getGmtTrans() ? Carbon::parse($result->getGmtTrans()) : null);
+        $object->setGmtTrans($result->getGmtTrans() !== null && $result->getGmtTrans() !== '' ? Carbon::parse($result->getGmtTrans()) : null);
         $object->setPreAuthType($result->getPreAuthType());
         $object->setCreditAmount($result->getCreditAmount());
         $object->setFundAmount($result->getFundAmount());
-        if ($result->getTransCurrency()) {
+        if ($result->getTransCurrency() !== null && $result->getTransCurrency() !== '') {
             $object->setTransCurrency($result->getTransCurrency());
         }
     }

@@ -8,7 +8,6 @@ use Alipay\OpenAPISDK\Api\AlipayTradeApi;
 use Alipay\OpenAPISDK\Util\AlipayConfigUtil;
 use Alipay\OpenAPISDK\Util\Model\AlipayConfig;
 use AlipayFundAuthBundle\Entity\Account;
-use GuzzleHttp\ClientInterface;
 
 class SdkService
 {
@@ -56,7 +55,7 @@ class SdkService
     /**
      * TODO 封装一个 Client
      */
-    private function getClient(): ?ClientInterface
+    private function getClient(): null
     {
         return null;
     }

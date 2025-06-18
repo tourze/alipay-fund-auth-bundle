@@ -23,7 +23,7 @@ use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 #[AsPermission(title: '统一交易订单')]
 #[ORM\Entity(repositoryClass: TradeOrderRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_order', options: ['comment' => '统一交易单'])]
-class TradeOrder
+class TradeOrder implements \Stringable
 {
     #[ExportColumn]
     #[ListColumn(order: -1, sorter: true)]
@@ -44,33 +44,21 @@ class TradeOrder
     #[ORM\Column(length: 64, options: ['comment' => '商户订单号'])]
     private ?string $outTradeNo = null;
 
-    /**
-     * @var string|null 单位为元，精确到小数点后两位，取值范围：[0.01,100000000]
-     */
     #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, options: ['comment' => '订单总金额'])]
     private ?string $totalAmount = null;
 
-    /**
-     * @var string|null 注意：不可使用特殊字符，如 /，=，& 等
-     */
     #[ORM\Column(length: 256, options: ['comment' => '订单标题'])]
     private ?string $subject = null;
 
     #[ORM\Column(length: 64, options: ['comment' => '签约产品码'])]
     private string $productCode = 'PREAUTH_PAY';
 
-    /**
-     * @var string|null 支付宝预授权和新当面资金授权场景下必填
-     */
     #[ORM\Column(length: 64, nullable: true, options: ['comment' => '资金预授权单号'])]
     private ?string $authNo = null;
 
     #[ORM\Column(length: 32, nullable: true, enumType: AuthConfirmMode::class, options: ['comment' => '预授权确认模式'])]
     private ?AuthConfirmMode $authConfirmMode = null;
 
-    /**
-     * @var string|null 指商户创建门店时输入的门店编号
-     */
     #[ORM\Column(length: 32, nullable: true, options: ['comment' => '商户门店编号'])]
     private ?string $storeId = null;
 
@@ -95,7 +83,7 @@ class TradeOrder
     #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, nullable: true, options: ['comment' => '交易中可给用户开具发票的金额'])]
     private ?string $invoiceAmount = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, options: ['comment' => '交易支付时间'])]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, options: ['comment' => '交易支付时间'])]
     private ?\DateTimeInterface $gmtPayment = null;
 
     #[ORM\Column(length: 512, nullable: true, options: ['comment' => '发生支付交易的商户门店名称'])]
@@ -104,18 +92,12 @@ class TradeOrder
     #[ORM\Column(length: 28, nullable: true, options: ['comment' => '买家在支付宝的用户id'])]
     private ?string $buyerUserId = null;
 
-    /**
-     * @see https://opendocs.alipay.com/mini/0ai2i6?pathHash=13dd5946
-     */
     #[ORM\Column(length: 128, nullable: true, options: ['comment' => '买家支付宝用户唯一标识'])]
     private ?string $buyerOpenId = null;
 
     #[ORM\Column(length: 20, nullable: true, enumType: AsyncPaymentMode::class, options: ['comment' => '异步支付模式'])]
     private ?AsyncPaymentMode $asyncPaymentMode = null;
 
-    /**
-     * @var AuthTradePayMode|null 该参数仅在信用预授权支付场景下返回
-     */
     #[ORM\Column(length: 64, nullable: true, enumType: AuthTradePayMode::class, options: ['comment' => '预授权支付模式'])]
     private ?AuthTradePayMode $authTradePayMode = null;
 
@@ -150,6 +132,11 @@ class TradeOrder
         $this->goodsDetails = new ArrayCollection();
         $this->fundBills = new ArrayCollection();
         $this->voucherDetails = new ArrayCollection();
+    }
+
+    public function __toString(): string
+    {
+        return $this->outTradeNo ?? ($this->id ?? '');
     }
 
     public function getId(): ?string

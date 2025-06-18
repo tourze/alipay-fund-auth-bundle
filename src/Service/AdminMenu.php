@@ -24,7 +24,7 @@ class AdminMenu implements MenuProviderInterface
 
     public function __invoke(ItemInterface $item): void
     {
-        if (!$item->getChild('支付宝预授权')) {
+        if ($item->getChild('支付宝预授权') === null) {
             $item->addChild('支付宝预授权');
         }
 
