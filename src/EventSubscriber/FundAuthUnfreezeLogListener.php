@@ -5,7 +5,7 @@ namespace AlipayFundAuthBundle\EventSubscriber;
 use Alipay\OpenAPISDK\Model\AlipayFundAuthOrderUnfreezeModel;
 use AlipayFundAuthBundle\Entity\FundAuthUnfreezeLog;
 use AlipayFundAuthBundle\Service\SdkService;
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\Events;
 
@@ -37,7 +37,7 @@ class FundAuthUnfreezeLogListener
 
         $object->setOperationId($result->getOperationId());
         $object->setStatus($result->getStatus());
-        $object->setGmtTrans($result->getGmtTrans() !== null && $result->getGmtTrans() !== '' ? Carbon::parse($result->getGmtTrans()) : null);
+        $object->setGmtTrans($result->getGmtTrans() !== null && $result->getGmtTrans() !== '' ? CarbonImmutable::parse($result->getGmtTrans()) : null);
         $object->setCreditAmount($result->getCreditAmount());
         $object->setFundAmount($result->getFundAmount());
     }

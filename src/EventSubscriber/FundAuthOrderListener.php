@@ -7,7 +7,7 @@ use Alipay\OpenAPISDK\Model\PostPayment;
 use AlipayFundAuthBundle\Entity\FundAuthOrder;
 use AlipayFundAuthBundle\Enum\FundAuthOrderStatus;
 use AlipayFundAuthBundle\Service\SdkService;
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\Events;
 
@@ -75,7 +75,7 @@ class FundAuthOrderListener
         $object->setAuthNo($result->getAuthNo());
         $object->setOperationId($result->getOperationId());
         $object->setStatus(FundAuthOrderStatus::from($result->getStatus()));
-        $object->setGmtTrans($result->getGmtTrans() !== null && $result->getGmtTrans() !== '' ? Carbon::parse($result->getGmtTrans()) : null);
+        $object->setGmtTrans($result->getGmtTrans() !== null && $result->getGmtTrans() !== '' ? CarbonImmutable::parse($result->getGmtTrans()) : null);
         $object->setPreAuthType($result->getPreAuthType());
         $object->setCreditAmount($result->getCreditAmount());
         $object->setFundAmount($result->getFundAmount());

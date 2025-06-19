@@ -6,7 +6,7 @@ use Alipay\OpenAPISDK\Model\AlipayTradePayModel;
 use Alipay\OpenAPISDK\Model\GoodsDetail;
 use AlipayFundAuthBundle\Entity\TradeOrder;
 use AlipayFundAuthBundle\Service\SdkService;
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Tourze\JsonRPC\Core\Attribute\MethodDoc;
 use Tourze\JsonRPC\Core\Attribute\MethodExpose;
 use Tourze\JsonRPC\Core\Attribute\MethodTag;
@@ -67,7 +67,7 @@ class CreateAlipayPreauthTradeOrder extends LockableProcedure
         $object->setBuyerPayAmount($result->getBuyerPayAmount());
         $object->setPointAmount($result->getPointAmount());
         $object->setInvoiceAmount($result->getInvoiceAmount());
-        $object->setGmtPayment(Carbon::parse($result->getGmtPayment()));
+        $object->setGmtPayment(CarbonImmutable::parse($result->getGmtPayment()));
         $object->setStoreName($result->getStoreName());
         if ($result->getAsyncPaymentMode() !== null) {
             $object->setAsyncPaymentMode(\AlipayFundAuthBundle\Enum\AsyncPaymentMode::tryFrom($result->getAsyncPaymentMode()));
