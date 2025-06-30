@@ -13,9 +13,9 @@ use Tourze\JsonRPC\Core\Attribute\MethodTag;
 use Tourze\JsonRPCLockBundle\Procedure\LockableProcedure;
 use Tourze\JsonRPCLogBundle\Attribute\Log;
 
-#[MethodTag('支付宝')]
-#[MethodDoc('创建预付款交易订单')]
-#[MethodExpose('CreateAlipayPreauthTradeOrder')]
+#[MethodTag(name: '支付宝')]
+#[MethodDoc(summary: '创建预付款交易订单')]
+#[MethodExpose(method: 'CreateAlipayPreauthTradeOrder')]
 #[Log]
 class CreateAlipayPreauthTradeOrder extends LockableProcedure
 {

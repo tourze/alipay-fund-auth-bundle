@@ -9,6 +9,7 @@ use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
 use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
 use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
+use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
@@ -17,11 +18,6 @@ use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 #[ORM\Table(name: 'alipay_fund_auth_trade_account', options: ['comment' => '支付宝账号'])]
 class Account implements \Stringable
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
-    #[ORM\Column(type: Types::BIGINT, nullable: false, options: ['comment' => 'ID'])]
-    private ?string $id = null;
 
     #[TrackColumn]
     #[ORM\Column(type: Types::STRING, length: 32, unique: true, options: ['comment' => '名称'])]
@@ -53,6 +49,7 @@ class Account implements \Stringable
 
     use TimestampableAware;
     use BlameableAware;
+    use SnowflakeKeyAware;
 
     public function __toString(): string
     {
@@ -76,15 +73,6 @@ class Account implements \Stringable
         return $this;
     }
 
-    public function getId(): ?string
-    {
-        return $this->id;
-    }
-
-    public function setId(?string $id): void
-    {
-        $this->id = $id;
-    }
 
     public function getAppId(): ?string
     {

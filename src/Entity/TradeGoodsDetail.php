@@ -6,16 +6,13 @@ use AlipayFundAuthBundle\Repository\TradeGoodsDetailRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
+use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 
 #[ORM\Entity(repositoryClass: TradeGoodsDetailRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_trade_goods_detail', options: ['comment' => '商品信息'])]
 class TradeGoodsDetail implements \Stringable
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
-    #[ORM\Column(type: Types::BIGINT, nullable: false, options: ['comment' => 'ID'])]
-    private ?string $id = null;
+    use SnowflakeKeyAware;
 
     #[ORM\Column(length: 64, options: ['comment' => '商品编号'])]
     private ?string $goodsId = null;
@@ -42,10 +39,6 @@ class TradeGoodsDetail implements \Stringable
     #[ORM\JoinColumn(nullable: false)]
     private ?TradeOrder $tradeOrder = null;
 
-    public function getId(): ?string
-    {
-        return $this->id;
-    }
 
     public function getGoodsId(): ?string
     {

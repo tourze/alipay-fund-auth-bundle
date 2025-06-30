@@ -9,16 +9,13 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
+use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 
 #[ORM\Entity(repositoryClass: FundAuthOrderRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_order', options: ['comment' => '预授权订单'])]
 class FundAuthOrder implements \Stringable
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
-    #[ORM\Column(type: Types::BIGINT, nullable: false, options: ['comment' => 'ID'])]
-    private ?string $id = null;
+    use SnowflakeKeyAware;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
@@ -111,10 +108,6 @@ class FundAuthOrder implements \Stringable
         return $this->outOrderNo ?? ($this->id ?? '');
     }
 
-    public function getId(): ?string
-    {
-        return $this->id;
-    }
 
     public function getAccount(): ?Account
     {

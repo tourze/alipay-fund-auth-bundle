@@ -6,16 +6,13 @@ use AlipayFundAuthBundle\Repository\FundAuthUnfreezeLogRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
+use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 
 #[ORM\Entity(repositoryClass: FundAuthUnfreezeLogRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_unfreeze_log', options: ['comment' => '解冻记录'])]
 class FundAuthUnfreezeLog implements \Stringable
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
-    #[ORM\Column(type: Types::BIGINT, nullable: false, options: ['comment' => 'ID'])]
-    private ?string $id = null;
+    use SnowflakeKeyAware;
 
     #[ORM\ManyToOne(inversedBy: 'unfreezeLogs')]
     #[ORM\JoinColumn(nullable: false)]
@@ -48,10 +45,6 @@ class FundAuthUnfreezeLog implements \Stringable
     #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, nullable: true, options: ['comment' => '本次解冻操作中自有资金解冻金额'])]
     private ?string $fundAmount = null;
 
-    public function getId(): ?string
-    {
-        return $this->id;
-    }
 
     public function getFundAuthOrder(): ?FundAuthOrder
     {

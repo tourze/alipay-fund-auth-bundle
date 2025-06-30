@@ -7,16 +7,13 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Tourze\Arrayable\PlainArrayInterface;
 use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
+use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 
 #[ORM\Entity(repositoryClass: FundAuthPostPaymentRepository::class)]
 #[ORM\Table(name: 'alipay_fund_auth_post_payment', options: ['comment' => '后付费项目'])]
 class FundAuthPostPayment implements PlainArrayInterface, \Stringable
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
-    #[ORM\Column(type: Types::BIGINT, nullable: false, options: ['comment' => 'ID'])]
-    private ?string $id = null;
+    use SnowflakeKeyAware;
 
     #[ORM\ManyToOne(inversedBy: 'postPayments')]
     #[ORM\JoinColumn(nullable: false)]
@@ -31,10 +28,6 @@ class FundAuthPostPayment implements PlainArrayInterface, \Stringable
     #[ORM\Column(length: 64, nullable: true, options: ['comment' => '计费说明'])]
     private ?string $description = null;
 
-    public function getId(): ?string
-    {
-        return $this->id;
-    }
 
     public function getFundAuthOrder(): ?FundAuthOrder
     {

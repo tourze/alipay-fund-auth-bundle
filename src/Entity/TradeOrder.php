@@ -12,6 +12,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
+use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 
 /**
@@ -21,11 +22,6 @@ use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 #[ORM\Table(name: 'alipay_fund_auth_trade_order', options: ['comment' => '统一交易单'])]
 class TradeOrder implements \Stringable
 {
-    #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
-    #[ORM\Column(type: Types::BIGINT, nullable: false, options: ['comment' => 'ID'])]
-    private ?string $id = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
@@ -120,6 +116,7 @@ class TradeOrder implements \Stringable
     private Collection $voucherDetails;
 
     use TimestampableAware;
+    use SnowflakeKeyAware;
 
     public function __construct()
     {
@@ -133,10 +130,6 @@ class TradeOrder implements \Stringable
         return $this->outTradeNo ?? ($this->id ?? '');
     }
 
-    public function getId(): ?string
-    {
-        return $this->id;
-    }
 
     public function getFundAuthOrder(): ?FundAuthOrder
     {
