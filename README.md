@@ -1,5 +1,12 @@
 # 支付宝模块
 
+[![PHP Version](https://img.shields.io/badge/php-%5E8.1-777BB4.svg?style=flat-square&logo=php)](https://www.php.net)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/tourze/php-monorepo/ci.yml?branch=master&style=flat-square)](https://github.com/tourze/php-monorepo/actions)
+[![Code Coverage](https://img.shields.io/codecov/c/github/tourze/php-monorepo?style=flat-square)](https://codecov.io/gh/tourze/php-monorepo)
+
+[English](README.md) | [中文](README.zh-CN.md)
+
 支付宝支付集成模块，提供了支付宝支付相关的功能，包括应用支付、手机网站支付、资金预授权等功能。
 
 ## 功能特性
@@ -13,6 +20,12 @@
 - 账单管理
   - 支持多种账单类型下载
   - 自动定时下载账单
+
+## Installation
+
+```bash
+composer require tourze/alipay-fund-auth-bundle
+```
 
 ## 配置
 
@@ -81,3 +94,7 @@ php bin/console alipay-trade:download-bill
 - `AppPaySuccessNotifyEvent`: APP支付成功通知事件
 - `WapPaySuccessNotifyEvent`: H5支付成功异步通知事件
 - `WapPaySuccessReturnEvent`: H5支付成功同步跳转事件
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

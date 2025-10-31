@@ -11,7 +11,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 
@@ -22,101 +22,155 @@ use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 #[ORM\Table(name: 'alipay_fund_auth_trade_order', options: ['comment' => '统一交易单'])]
 class TradeOrder implements \Stringable
 {
+    use TimestampableAware;
+    use SnowflakeKeyAware;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false)]
     private ?Account $account = null;
 
-    #[ORM\ManyToOne(inversedBy: 'trades')]
+    #[ORM\ManyToOne(inversedBy: 'trades', cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: true)]
     private ?FundAuthOrder $fundAuthOrder = null;
 
     #[ORM\Column(length: 64, options: ['comment' => '商户订单号'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 64)]
     private ?string $outTradeNo = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, options: ['comment' => '订单总金额'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 13)] // 11位整数+1位小数点+2位小数
+    #[Assert\PositiveOrZero]
+    #[Assert\Regex(pattern: '/^\d{1,9}(\.\d{1,2})?$/', message: '金额格式不正确')]
     private ?string $totalAmount = null;
 
     #[ORM\Column(length: 256, options: ['comment' => '订单标题'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 256)]
     private ?string $subject = null;
 
     #[ORM\Column(length: 64, options: ['comment' => '签约产品码'])]
-    private string $productCode = 'PREAUTH_PAY';
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 64)]
+    private string $productCode = FundAuthOrder::PRODUCT_CODE_PREAUTH_PAY;
 
     #[ORM\Column(length: 64, nullable: true, options: ['comment' => '资金预授权单号'])]
+    #[Assert\Length(max: 64)]
     private ?string $authNo = null;
 
     #[ORM\Column(length: 32, nullable: true, enumType: AuthConfirmMode::class, options: ['comment' => '预授权确认模式'])]
+    #[Assert\Choice(callback: [AuthConfirmMode::class, 'cases'])]
     private ?AuthConfirmMode $authConfirmMode = null;
 
     #[ORM\Column(length: 32, nullable: true, options: ['comment' => '商户门店编号'])]
+    #[Assert\Length(max: 32)]
     private ?string $storeId = null;
 
     #[ORM\Column(length: 32, nullable: true, options: ['comment' => '商户机具终端编号'])]
+    #[Assert\Length(max: 32)]
     private ?string $terminalId = null;
 
     #[ORM\Column(length: 64, nullable: true, options: ['comment' => '支付宝交易号'])]
+    #[Assert\Length(max: 64)]
     private ?string $tradeNo = null;
 
     #[ORM\Column(length: 100, nullable: true, options: ['comment' => '买家支付宝账号'])]
+    #[Assert\Length(max: 100)]
     private ?string $buyerLogonId = null;
 
     #[ORM\Column(length: 11, nullable: true, options: ['comment' => '实收金额'])]
+    #[Assert\Length(max: 11)]
+    #[Assert\PositiveOrZero]
     private ?string $receiptAmount = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, nullable: true, options: ['comment' => '买家付款的金额'])]
+    #[Assert\Length(max: 13)] // 11位整数+1位小数点+2位小数
+    #[Assert\PositiveOrZero]
+    #[Assert\Regex(pattern: '/^\d{1,9}(\.\d{1,2})?$/', message: '金额格式不正确')]
     private ?string $buyerPayAmount = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, nullable: true, options: ['comment' => '使用集分宝付款的金额'])]
+    #[Assert\Length(max: 13)] // 11位整数+1位小数点+2位小数
+    #[Assert\PositiveOrZero]
+    #[Assert\Regex(pattern: '/^\d{1,9}(\.\d{1,2})?$/', message: '金额格式不正确')]
     private ?string $pointAmount = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, nullable: true, options: ['comment' => '交易中可给用户开具发票的金额'])]
+    #[Assert\Length(max: 13)] // 11位整数+1位小数点+2位小数
+    #[Assert\PositiveOrZero]
+    #[Assert\Regex(pattern: '/^\d{1,9}(\.\d{1,2})?$/', message: '金额格式不正确')]
     private ?string $invoiceAmount = null;
 
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, options: ['comment' => '交易支付时间'])]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['comment' => '交易支付时间'])]
+    #[Assert\Type(type: '\DateTimeInterface')]
     private ?\DateTimeInterface $gmtPayment = null;
 
     #[ORM\Column(length: 512, nullable: true, options: ['comment' => '发生支付交易的商户门店名称'])]
+    #[Assert\Length(max: 512)]
     private ?string $storeName = null;
 
     #[ORM\Column(length: 28, nullable: true, options: ['comment' => '买家在支付宝的用户id'])]
+    #[Assert\Length(max: 28)]
     private ?string $buyerUserId = null;
 
     #[ORM\Column(length: 128, nullable: true, options: ['comment' => '买家支付宝用户唯一标识'])]
+    #[Assert\Length(max: 128)]
     private ?string $buyerOpenId = null;
 
     #[ORM\Column(length: 20, nullable: true, enumType: AsyncPaymentMode::class, options: ['comment' => '异步支付模式'])]
+    #[Assert\Choice(callback: [AsyncPaymentMode::class, 'cases'])]
     private ?AsyncPaymentMode $asyncPaymentMode = null;
 
     #[ORM\Column(length: 64, nullable: true, enumType: AuthTradePayMode::class, options: ['comment' => '预授权支付模式'])]
+    #[Assert\Choice(callback: [AuthTradePayMode::class, 'cases'])]
     private ?AuthTradePayMode $authTradePayMode = null;
 
     #[ORM\Column(length: 64, nullable: true, enumType: AliPayType::class, options: ['comment' => '支付类型'])]
+    #[Assert\Choice(callback: [AliPayType::class, 'cases'])]
     private ?AliPayType $payType = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, nullable: true, options: ['comment' => '商家优惠金额'])]
+    #[Assert\Length(max: 13)] // 11位整数+1位小数点+2位小数
+    #[Assert\PositiveOrZero]
+    #[Assert\Regex(pattern: '/^\d{1,9}(\.\d{1,2})?$/', message: '金额格式不正确')]
     private ?string $mdiscountAmount = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 11, scale: 2, nullable: true, options: ['comment' => '平台优惠金额'])]
+    #[Assert\Length(max: 13)] // 11位整数+1位小数点+2位小数
+    #[Assert\PositiveOrZero]
+    #[Assert\Regex(pattern: '/^\d{1,9}(\.\d{1,2})?$/', message: '金额格式不正确')]
     private ?string $discountAmount = null;
 
     #[ORM\Column(length: 64, options: ['default' => 'NO_PAY', 'comment' => '支付状态'])]
-    private string $tradeStatus;
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 64)]
+    private string $tradeStatus = 'NO_PAY';
 
+    /**
+     * @var array<string, mixed>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true, options: ['comment' => '回调信息'])]
+    #[Assert\Type(type: 'array')]
     private ?array $notifyPayload = null;
 
+    /**
+     * @var Collection<int, TradeGoodsDetail>
+     */
     #[ORM\OneToMany(targetEntity: TradeGoodsDetail::class, mappedBy: 'tradeOrder')]
     private Collection $goodsDetails;
 
+    /**
+     * @var Collection<int, TradeFundBill>
+     */
     #[ORM\OneToMany(targetEntity: TradeFundBill::class, mappedBy: 'tradeOrder')]
     private Collection $fundBills;
 
+    /**
+     * @var Collection<int, TradeVoucherDetail>
+     */
     #[ORM\OneToMany(targetEntity: TradeVoucherDetail::class, mappedBy: 'tradeOrder')]
     private Collection $voucherDetails;
-
-    use TimestampableAware;
-    use SnowflakeKeyAware;
 
     public function __construct()
     {
@@ -130,17 +184,14 @@ class TradeOrder implements \Stringable
         return $this->outTradeNo ?? ($this->id ?? '');
     }
 
-
     public function getFundAuthOrder(): ?FundAuthOrder
     {
         return $this->fundAuthOrder;
     }
 
-    public function setFundAuthOrder(?FundAuthOrder $fundAuthOrder): static
+    public function setFundAuthOrder(?FundAuthOrder $fundAuthOrder): void
     {
         $this->fundAuthOrder = $fundAuthOrder;
-
-        return $this;
     }
 
     public function getOutTradeNo(): ?string
@@ -148,11 +199,9 @@ class TradeOrder implements \Stringable
         return $this->outTradeNo;
     }
 
-    public function setOutTradeNo(string $outTradeNo): static
+    public function setOutTradeNo(string $outTradeNo): void
     {
         $this->outTradeNo = $outTradeNo;
-
-        return $this;
     }
 
     public function getTotalAmount(): ?string
@@ -160,11 +209,9 @@ class TradeOrder implements \Stringable
         return $this->totalAmount;
     }
 
-    public function setTotalAmount(string $totalAmount): static
+    public function setTotalAmount(string $totalAmount): void
     {
         $this->totalAmount = $totalAmount;
-
-        return $this;
     }
 
     public function getSubject(): ?string
@@ -172,11 +219,9 @@ class TradeOrder implements \Stringable
         return $this->subject;
     }
 
-    public function setSubject(string $subject): static
+    public function setSubject(string $subject): void
     {
         $this->subject = $subject;
-
-        return $this;
     }
 
     public function getProductCode(): string
@@ -184,11 +229,9 @@ class TradeOrder implements \Stringable
         return $this->productCode;
     }
 
-    public function setProductCode(string $productCode): static
+    public function setProductCode(string $productCode): void
     {
         $this->productCode = $productCode;
-
-        return $this;
     }
 
     public function getAuthNo(): ?string
@@ -196,11 +239,9 @@ class TradeOrder implements \Stringable
         return $this->authNo;
     }
 
-    public function setAuthNo(string $authNo): static
+    public function setAuthNo(string $authNo): void
     {
         $this->authNo = $authNo;
-
-        return $this;
     }
 
     public function getAuthConfirmMode(): ?AuthConfirmMode
@@ -208,11 +249,9 @@ class TradeOrder implements \Stringable
         return $this->authConfirmMode;
     }
 
-    public function setAuthConfirmMode(?AuthConfirmMode $authConfirmMode): static
+    public function setAuthConfirmMode(?AuthConfirmMode $authConfirmMode): void
     {
         $this->authConfirmMode = $authConfirmMode;
-
-        return $this;
     }
 
     public function getStoreId(): ?string
@@ -220,11 +259,9 @@ class TradeOrder implements \Stringable
         return $this->storeId;
     }
 
-    public function setStoreId(?string $storeId): static
+    public function setStoreId(?string $storeId): void
     {
         $this->storeId = $storeId;
-
-        return $this;
     }
 
     public function getTerminalId(): ?string
@@ -232,11 +269,9 @@ class TradeOrder implements \Stringable
         return $this->terminalId;
     }
 
-    public function setTerminalId(?string $terminalId): static
+    public function setTerminalId(?string $terminalId): void
     {
         $this->terminalId = $terminalId;
-
-        return $this;
     }
 
     public function getTradeNo(): ?string
@@ -244,11 +279,9 @@ class TradeOrder implements \Stringable
         return $this->tradeNo;
     }
 
-    public function setTradeNo(?string $tradeNo): static
+    public function setTradeNo(?string $tradeNo): void
     {
         $this->tradeNo = $tradeNo;
-
-        return $this;
     }
 
     public function getBuyerLogonId(): ?string
@@ -256,11 +289,9 @@ class TradeOrder implements \Stringable
         return $this->buyerLogonId;
     }
 
-    public function setBuyerLogonId(?string $buyerLogonId): static
+    public function setBuyerLogonId(?string $buyerLogonId): void
     {
         $this->buyerLogonId = $buyerLogonId;
-
-        return $this;
     }
 
     public function getReceiptAmount(): ?string
@@ -268,11 +299,9 @@ class TradeOrder implements \Stringable
         return $this->receiptAmount;
     }
 
-    public function setReceiptAmount(?string $receiptAmount): static
+    public function setReceiptAmount(?string $receiptAmount): void
     {
         $this->receiptAmount = $receiptAmount;
-
-        return $this;
     }
 
     public function getBuyerPayAmount(): ?string
@@ -280,11 +309,9 @@ class TradeOrder implements \Stringable
         return $this->buyerPayAmount;
     }
 
-    public function setBuyerPayAmount(?string $buyerPayAmount): static
+    public function setBuyerPayAmount(?string $buyerPayAmount): void
     {
         $this->buyerPayAmount = $buyerPayAmount;
-
-        return $this;
     }
 
     public function getPointAmount(): ?string
@@ -292,11 +319,9 @@ class TradeOrder implements \Stringable
         return $this->pointAmount;
     }
 
-    public function setPointAmount(?string $pointAmount): static
+    public function setPointAmount(?string $pointAmount): void
     {
         $this->pointAmount = $pointAmount;
-
-        return $this;
     }
 
     public function getInvoiceAmount(): ?string
@@ -304,11 +329,9 @@ class TradeOrder implements \Stringable
         return $this->invoiceAmount;
     }
 
-    public function setInvoiceAmount(?string $invoiceAmount): static
+    public function setInvoiceAmount(?string $invoiceAmount): void
     {
         $this->invoiceAmount = $invoiceAmount;
-
-        return $this;
     }
 
     public function getGmtPayment(): ?\DateTimeInterface
@@ -316,11 +339,9 @@ class TradeOrder implements \Stringable
         return $this->gmtPayment;
     }
 
-    public function setGmtPayment(\DateTimeInterface $gmtPayment): static
+    public function setGmtPayment(\DateTimeInterface $gmtPayment): void
     {
         $this->gmtPayment = $gmtPayment;
-
-        return $this;
     }
 
     public function getStoreName(): ?string
@@ -328,11 +349,9 @@ class TradeOrder implements \Stringable
         return $this->storeName;
     }
 
-    public function setStoreName(?string $storeName): static
+    public function setStoreName(?string $storeName): void
     {
         $this->storeName = $storeName;
-
-        return $this;
     }
 
     public function getBuyerUserId(): ?string
@@ -340,11 +359,9 @@ class TradeOrder implements \Stringable
         return $this->buyerUserId;
     }
 
-    public function setBuyerUserId(?string $buyerUserId): static
+    public function setBuyerUserId(?string $buyerUserId): void
     {
         $this->buyerUserId = $buyerUserId;
-
-        return $this;
     }
 
     public function getAsyncPaymentMode(): ?AsyncPaymentMode
@@ -352,11 +369,9 @@ class TradeOrder implements \Stringable
         return $this->asyncPaymentMode;
     }
 
-    public function setAsyncPaymentMode(?AsyncPaymentMode $asyncPaymentMode): static
+    public function setAsyncPaymentMode(?AsyncPaymentMode $asyncPaymentMode): void
     {
         $this->asyncPaymentMode = $asyncPaymentMode;
-
-        return $this;
     }
 
     public function getAuthTradePayMode(): ?AuthTradePayMode
@@ -364,11 +379,9 @@ class TradeOrder implements \Stringable
         return $this->authTradePayMode;
     }
 
-    public function setAuthTradePayMode(?AuthTradePayMode $authTradePayMode): static
+    public function setAuthTradePayMode(?AuthTradePayMode $authTradePayMode): void
     {
         $this->authTradePayMode = $authTradePayMode;
-
-        return $this;
     }
 
     public function getMdiscountAmount(): ?string
@@ -376,11 +389,9 @@ class TradeOrder implements \Stringable
         return $this->mdiscountAmount;
     }
 
-    public function setMdiscountAmount(?string $mdiscountAmount): static
+    public function setMdiscountAmount(?string $mdiscountAmount): void
     {
         $this->mdiscountAmount = $mdiscountAmount;
-
-        return $this;
     }
 
     public function getDiscountAmount(): ?string
@@ -388,11 +399,9 @@ class TradeOrder implements \Stringable
         return $this->discountAmount;
     }
 
-    public function setDiscountAmount(?string $discountAmount): static
+    public function setDiscountAmount(?string $discountAmount): void
     {
         $this->discountAmount = $discountAmount;
-
-        return $this;
     }
 
     /**
@@ -403,17 +412,15 @@ class TradeOrder implements \Stringable
         return $this->goodsDetails;
     }
 
-    public function addGoodsDetail(TradeGoodsDetail $goodsDetail): static
+    public function addGoodsDetail(TradeGoodsDetail $goodsDetail): void
     {
         if (!$this->goodsDetails->contains($goodsDetail)) {
             $this->goodsDetails->add($goodsDetail);
             $goodsDetail->setTradeOrder($this);
         }
-
-        return $this;
     }
 
-    public function removeGoodsDetail(TradeGoodsDetail $goodsDetail): static
+    public function removeGoodsDetail(TradeGoodsDetail $goodsDetail): void
     {
         if ($this->goodsDetails->removeElement($goodsDetail)) {
             // set the owning side to null (unless already changed)
@@ -421,8 +428,6 @@ class TradeOrder implements \Stringable
                 $goodsDetail->setTradeOrder(null);
             }
         }
-
-        return $this;
     }
 
     public function getAccount(): ?Account
@@ -430,11 +435,9 @@ class TradeOrder implements \Stringable
         return $this->account;
     }
 
-    public function setAccount(?Account $account): static
+    public function setAccount(?Account $account): void
     {
         $this->account = $account;
-
-        return $this;
     }
 
     public function getBuyerOpenId(): ?string
@@ -442,11 +445,9 @@ class TradeOrder implements \Stringable
         return $this->buyerOpenId;
     }
 
-    public function setBuyerOpenId(?string $buyerOpenId): static
+    public function setBuyerOpenId(?string $buyerOpenId): void
     {
         $this->buyerOpenId = $buyerOpenId;
-
-        return $this;
     }
 
     /**
@@ -457,17 +458,15 @@ class TradeOrder implements \Stringable
         return $this->fundBills;
     }
 
-    public function addFundBill(TradeFundBill $fundBill): static
+    public function addFundBill(TradeFundBill $fundBill): void
     {
         if (!$this->fundBills->contains($fundBill)) {
             $this->fundBills->add($fundBill);
             $fundBill->setTradeOrder($this);
         }
-
-        return $this;
     }
 
-    public function removeFundBill(TradeFundBill $fundBill): static
+    public function removeFundBill(TradeFundBill $fundBill): void
     {
         if ($this->fundBills->removeElement($fundBill)) {
             // set the owning side to null (unless already changed)
@@ -475,8 +474,6 @@ class TradeOrder implements \Stringable
                 $fundBill->setTradeOrder(null);
             }
         }
-
-        return $this;
     }
 
     /**
@@ -487,17 +484,15 @@ class TradeOrder implements \Stringable
         return $this->voucherDetails;
     }
 
-    public function addVoucherDetail(TradeVoucherDetail $voucherDetail): static
+    public function addVoucherDetail(TradeVoucherDetail $voucherDetail): void
     {
         if (!$this->voucherDetails->contains($voucherDetail)) {
             $this->voucherDetails->add($voucherDetail);
             $voucherDetail->setTradeOrder($this);
         }
-
-        return $this;
     }
 
-    public function removeVoucherDetail(TradeVoucherDetail $voucherDetail): static
+    public function removeVoucherDetail(TradeVoucherDetail $voucherDetail): void
     {
         if ($this->voucherDetails->removeElement($voucherDetail)) {
             // set the owning side to null (unless already changed)
@@ -505,8 +500,6 @@ class TradeOrder implements \Stringable
                 $voucherDetail->setTradeOrder(null);
             }
         }
-
-        return $this;
     }
 
     public function getPayType(): ?AliPayType
@@ -519,11 +512,17 @@ class TradeOrder implements \Stringable
         $this->payType = $payType;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getNotifyPayload(): ?array
     {
         return $this->notifyPayload;
     }
 
+    /**
+     * @param array<string, mixed>|null $notifyPayload
+     */
     public function setNotifyPayload(?array $notifyPayload): void
     {
         $this->notifyPayload = $notifyPayload;

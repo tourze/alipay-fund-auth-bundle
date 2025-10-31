@@ -5,19 +5,34 @@ namespace AlipayFundAuthBundle\Repository;
 use AlipayFundAuthBundle\Entity\TradeFundBill;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-
+use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
 
 /**
- * @method TradeFundBill|null find($id, $lockMode = null, $lockVersion = null)
- * @method TradeFundBill|null findOneBy(array $criteria, array $orderBy = null)
- * @method TradeFundBill[]    findAll()
- * @method TradeFundBill[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ * @extends ServiceEntityRepository<TradeFundBill>
  */
+#[AsRepository(entityClass: TradeFundBill::class)]
 class TradeFundBillRepository extends ServiceEntityRepository
 {
-
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, TradeFundBill::class);
+    }
+
+    public function save(TradeFundBill $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(TradeFundBill $entity, bool $flush = true): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
     }
 }

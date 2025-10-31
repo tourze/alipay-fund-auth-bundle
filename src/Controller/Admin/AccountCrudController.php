@@ -18,8 +18,11 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\BooleanFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\DateTimeFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 
+/**
+ * @extends AbstractCrudController<Account>
+ */
 #[AdminCrud(routePath: '/alipay-fund-auth/account', routeName: 'alipay_fund_auth_account')]
-class AccountCrudController extends AbstractCrudController
+final class AccountCrudController extends AbstractCrudController
 {
     public static function getEntityFqcn(): string
     {
@@ -37,7 +40,8 @@ class AccountCrudController extends AbstractCrudController
             ->setPageTitle('new', '新建支付宝账号')
             ->setHelp('index', '管理支付宝支付账号配置信息')
             ->setDefaultSort(['id' => 'DESC'])
-            ->setSearchFields(['id', 'name', 'appId']);
+            ->setSearchFields(['id', 'name', 'appId'])
+        ;
     }
 
     public function configureFields(string $pageName): iterable
@@ -60,7 +64,7 @@ class AccountCrudController extends AbstractCrudController
     {
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
-            ->reorder(Crud::PAGE_INDEX, [Action::DETAIL, Action::EDIT, Action::DELETE]);
+        ;
     }
 
     public function configureFilters(Filters $filters): Filters
@@ -70,6 +74,7 @@ class AccountCrudController extends AbstractCrudController
             ->add(TextFilter::new('appId', 'AppID'))
             ->add(BooleanFilter::new('valid', '有效状态'))
             ->add(DateTimeFilter::new('createTime', '创建时间'))
-            ->add(DateTimeFilter::new('updateTime', '更新时间'));
+            ->add(DateTimeFilter::new('updateTime', '更新时间'))
+        ;
     }
-} 
+}

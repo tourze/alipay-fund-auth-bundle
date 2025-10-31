@@ -3,28 +3,35 @@
 namespace AlipayFundAuthBundle\Tests\DependencyInjection;
 
 use AlipayFundAuthBundle\DependencyInjection\AlipayFundAuthExtension;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Tourze\PHPUnitSymfonyUnitTest\AbstractDependencyInjectionExtensionTestCase;
 
-class AlipayFundAuthExtensionTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(AlipayFundAuthExtension::class)]
+final class AlipayFundAuthExtensionTest extends AbstractDependencyInjectionExtensionTestCase
 {
-    private AlipayFundAuthExtension $extension;
-    private ContainerBuilder $container;
-
-    protected function setUp(): void
-    {
-        $this->extension = new AlipayFundAuthExtension();
-        $this->container = new ContainerBuilder();
-    }
-
     /**
      * 测试扩展加载
      */
-    public function testLoad_withEmptyConfig_loadsSuccessfully(): void
+    public function testLoadWithEmptyConfigLoadsSuccessfully(): void
     {
-        $this->extension->load([], $this->container);
-        
-        // 检查是否加载了服务配置
-        $this->assertNotEmpty($this->container->getDefinitions());
+        $extension = new AlipayFundAuthExtension();
+        $container = new ContainerBuilder();
+        $container->setParameter('kernel.environment', 'test');
+
+        $extension->load([], $container);
+
+        $this->assertFileExists(
+            __DIR__ . '/../../src/Resources/config/services.yaml',
+            'services.yaml 配置文件应该存在'
+        );
+
+        $this->assertNotEmpty(
+            $container->getDefinitions(),
+            'Container 不应为空，即使没有配置'
+        );
     }
 }

@@ -8,11 +8,23 @@ services:
     resource: '../../Controller/'
   AlipayFundAuthBundle\EventSubscriber\:
     resource: '../../EventSubscriber/'
+  
+  AlipayFundAuthBundle\EventSubscriber\FundAuthOrderListener:
+    arguments:
+      $environment: '%kernel.environment%'
+  
+  AlipayFundAuthBundle\EventSubscriber\FundAuthUnfreezeLogListener:
+    arguments:
+      $environment: '%kernel.environment%'
   AlipayFundAuthBundle\Procedure\:
     resource: '../../Procedure/'
   AlipayFundAuthBundle\Repository\:
     resource: '../../Repository/'
   AlipayFundAuthBundle\Service\:
     resource: '../../Service/'
+  
+  # 确保测试时可以访问 AdminMenu 服务
+  AlipayFundAuthBundle\Service\AdminMenu:
+    public: true
 
   Tourze\FileNameGenerator\RandomNameGenerator: ~

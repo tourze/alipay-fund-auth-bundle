@@ -2,11 +2,16 @@
 
 namespace AlipayFundAuthBundle\Procedure;
 
+use Alipay\OpenAPISDK\Api\AlipayTradeApi;
+use Alipay\OpenAPISDK\Model\AlipayTradePayDefaultResponse;
 use Alipay\OpenAPISDK\Model\AlipayTradePayModel;
+use Alipay\OpenAPISDK\Model\AlipayTradePayResponseModel;
 use Alipay\OpenAPISDK\Model\GoodsDetail;
+use AlipayFundAuthBundle\Entity\TradeGoodsDetail;
 use AlipayFundAuthBundle\Entity\TradeOrder;
+use AlipayFundAuthBundle\Exception\InvalidFundAuthOrderException;
 use AlipayFundAuthBundle\Service\SdkService;
-use Carbon\CarbonImmutable;
+use AlipayFundAuthBundle\Service\TradeOrderResultUpdater;
 use Tourze\JsonRPC\Core\Attribute\MethodDoc;
 use Tourze\JsonRPC\Core\Attribute\MethodExpose;
 use Tourze\JsonRPC\Core\Attribute\MethodTag;
@@ -19,68 +24,122 @@ use Tourze\JsonRPCLogBundle\Attribute\Log;
 #[Log]
 class CreateAlipayPreauthTradeOrder extends LockableProcedure
 {
-    public function __construct(private readonly SdkService $sdkService)
-    {
+    public function __construct(
+        private readonly SdkService $sdkService,
+        private readonly TradeOrderResultUpdater $resultUpdater,
+    ) {
     }
 
     public function execute(): array
     {
-        // TODO 创建订单
-        $object = new TradeOrder();
+        $tradeOrder = new TradeOrder();
+        $this->validateTradeOrder($tradeOrder);
 
-        $api = $this->sdkService->getTradeApi($object->getAccount());
-        $object->setTradeStatus('NO_PAY');
-        $model = new AlipayTradePayModel();
-        $model->setOutTradeNo($object->getOutTradeNo());
-        $model->setAuthNo($object->getFundAuthOrder()->getAuthNo());
-        $model->setTotalAmount($object->getTotalAmount());
-        $model->setSubject($object->getSubject());
-        $model->setProductCode($object->getProductCode());
-        $model->setAuthNo($object->getAuthNo());
-        if ($object->getAuthConfirmMode() !== null) {
-            $model->setAuthConfirmMode($object->getAuthConfirmMode()->value);
+        $api = $this->getTradeApi($tradeOrder);
+        $tradeOrder->setTradeStatus('NO_PAY');
+
+        $model = $this->buildPaymentModel($tradeOrder);
+        /** @var AlipayTradePayResponseModel<mixed, mixed>|AlipayTradePayDefaultResponse<mixed, mixed> $apiResult */
+        $apiResult = $api->pay($model);
+
+        $this->resultUpdater->updateFromResult($tradeOrder, $apiResult);
+
+        return ['__message' => '创建成功'];
+    }
+
+    private function validateTradeOrder(TradeOrder $tradeOrder): void
+    {
+        if (null === $tradeOrder->getAccount()) {
+            throw new InvalidFundAuthOrderException('TradeOrder must have an account');
         }
 
+        if (null === $tradeOrder->getFundAuthOrder()) {
+            throw new InvalidFundAuthOrderException('TradeOrder must have a fundAuthOrder');
+        }
+    }
+
+    /**
+     * @return AlipayTradeApi
+     */
+    private function getTradeApi(TradeOrder $tradeOrder): AlipayTradeApi
+    {
+        $account = $tradeOrder->getAccount();
+        if (null === $account) {
+            throw new InvalidFundAuthOrderException('TradeOrder must have an account');
+        }
+
+        return $this->sdkService->getTradeApi($account);
+    }
+
+    /**
+     * @return AlipayTradePayModel<mixed, mixed>
+     */
+    private function buildPaymentModel(TradeOrder $tradeOrder): AlipayTradePayModel
+    {
+        $model = new AlipayTradePayModel();
+        $this->setBasicModelFields($model, $tradeOrder);
+        $this->setModelGoodsDetails($model, $tradeOrder);
+        $this->setModelStoreFields($model, $tradeOrder);
+
+        return $model;
+    }
+
+    /**
+     * @param AlipayTradePayModel<mixed, mixed> $model
+     */
+    private function setBasicModelFields(AlipayTradePayModel $model, TradeOrder $tradeOrder): void
+    {
+        $fundAuthOrder = $tradeOrder->getFundAuthOrder();
+
+        $model->setOutTradeNo($tradeOrder->getOutTradeNo());
+        if (null !== $fundAuthOrder) {
+            $model->setAuthNo($fundAuthOrder->getAuthNo());
+        }
+        $model->setTotalAmount($tradeOrder->getTotalAmount());
+        $model->setSubject($tradeOrder->getSubject());
+        $model->setProductCode($tradeOrder->getProductCode());
+        $model->setAuthNo($tradeOrder->getAuthNo());
+
+        if (null !== $tradeOrder->getAuthConfirmMode()) {
+            $model->setAuthConfirmMode($tradeOrder->getAuthConfirmMode()->value);
+        }
+    }
+
+    /**
+     * @param AlipayTradePayModel<mixed, mixed> $model
+     */
+    private function setModelGoodsDetails(AlipayTradePayModel $model, TradeOrder $tradeOrder): void
+    {
         $goodsDetails = [];
-        foreach ($object->getGoodsDetails() as $detail) {
-            $g = new GoodsDetail();
-            $g->setGoodsId($detail->getGoodsId());
-            $g->setGoodsName($detail->getGoodsName());
-            $g->setQuantity($detail->getQuantity());
-            $g->setPrice($detail->getPrice());
-            $g->setGoodsCategory($detail->getGoodsCategory());
-            $g->setCategoriesTree($detail->getCategoryTree());
-            $g->setShowUrl($detail->getShowUrl());
-            $goodsDetails[] = $g;
+        foreach ($tradeOrder->getGoodsDetails() as $detail) {
+            $goodsDetails[] = $this->createGoodsDetail($detail);
         }
         $model->setGoodsDetail($goodsDetails);
+    }
 
-        $model->setStoreId($object->getStoreId());
-        $model->setTerminalId($object->getTerminalId());
+    /**
+     * @return GoodsDetail<mixed, mixed>
+     */
+    private function createGoodsDetail(TradeGoodsDetail $detail): GoodsDetail
+    {
+        $goodsDetail = new GoodsDetail();
+        $goodsDetail->setGoodsId($detail->getGoodsId());
+        $goodsDetail->setGoodsName($detail->getGoodsName());
+        $goodsDetail->setQuantity($detail->getQuantity());
+        $goodsDetail->setPrice($detail->getPrice());
+        $goodsDetail->setGoodsCategory($detail->getGoodsCategory());
+        $goodsDetail->setCategoriesTree($detail->getCategoryTree());
+        $goodsDetail->setShowUrl($detail->getShowUrl());
 
-        $result = $api->pay($model);
+        return $goodsDetail;
+    }
 
-        $object->setTradeNo($result->getTradeNo());
-        $object->setBuyerLogonId($result->getBuyerLogonId());
-        $object->setBuyerUserId($result->getBuyerUserId());
-        $object->setReceiptAmount($result->getReceiptAmount());
-        $object->setBuyerPayAmount($result->getBuyerPayAmount());
-        $object->setPointAmount($result->getPointAmount());
-        $object->setInvoiceAmount($result->getInvoiceAmount());
-        $object->setGmtPayment(CarbonImmutable::parse($result->getGmtPayment()));
-        $object->setStoreName($result->getStoreName());
-        if ($result->getAsyncPaymentMode() !== null) {
-            $object->setAsyncPaymentMode(\AlipayFundAuthBundle\Enum\AsyncPaymentMode::tryFrom($result->getAsyncPaymentMode()));
-        }
-        if ($result->getAuthTradePayMode() !== null) {
-            $object->setAuthTradePayMode(\AlipayFundAuthBundle\Enum\AuthTradePayMode::tryFrom($result->getAuthTradePayMode()));
-        }
-        $object->setMdiscountAmount($result->getMdiscountAmount());
-        $object->setDiscountAmount($result->getDiscountAmount());
-
-        $result = [];
-        $result['__message'] = '创建成功';
-
-        return $result;
+    /**
+     * @param AlipayTradePayModel<mixed, mixed> $model
+     */
+    private function setModelStoreFields(AlipayTradePayModel $model, TradeOrder $tradeOrder): void
+    {
+        $model->setStoreId($tradeOrder->getStoreId());
+        $model->setTerminalId($tradeOrder->getTerminalId());
     }
 }

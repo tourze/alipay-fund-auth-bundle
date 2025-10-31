@@ -18,8 +18,11 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\DateTimeFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 
+/**
+ * @extends AbstractCrudController<FundAuthUnfreezeLog>
+ */
 #[AdminCrud(routePath: '/alipay-fund-auth/fund-auth-unfreeze-log', routeName: 'alipay_fund_auth_fund_auth_unfreeze_log')]
-class FundAuthUnfreezeLogCrudController extends AbstractCrudController
+final class FundAuthUnfreezeLogCrudController extends AbstractCrudController
 {
     public static function getEntityFqcn(): string
     {
@@ -37,7 +40,8 @@ class FundAuthUnfreezeLogCrudController extends AbstractCrudController
             ->setPageTitle('new', '新建解冻记录')
             ->setHelp('index', '管理资金预授权解冻记录')
             ->setDefaultSort(['id' => 'DESC'])
-            ->setSearchFields(['id', 'outRequestNo', 'remark', 'operationId']);
+            ->setSearchFields(['id', 'outRequestNo', 'remark', 'operationId'])
+        ;
     }
 
     public function configureFields(string $pageName): iterable
@@ -58,7 +62,7 @@ class FundAuthUnfreezeLogCrudController extends AbstractCrudController
     {
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
-            ->reorder(Crud::PAGE_INDEX, [Action::DETAIL, Action::EDIT, Action::DELETE]);
+        ;
     }
 
     public function configureFilters(Filters $filters): Filters
@@ -68,6 +72,7 @@ class FundAuthUnfreezeLogCrudController extends AbstractCrudController
             ->add(TextFilter::new('outRequestNo', '商户请求号'))
             ->add(TextFilter::new('remark', '备注'))
             ->add(TextFilter::new('status', '状态'))
-            ->add(DateTimeFilter::new('gmtTrans', '交易时间'));
+            ->add(DateTimeFilter::new('gmtTrans', '交易时间'))
+        ;
     }
-} 
+}

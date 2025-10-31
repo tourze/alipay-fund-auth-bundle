@@ -2,29 +2,70 @@
 
 namespace AlipayFundAuthBundle\Tests\Entity;
 
+use AlipayFundAuthBundle\Entity\FundAuthOrder;
 use AlipayFundAuthBundle\Entity\FundAuthPostPayment;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitDoctrineEntity\AbstractEntityTestCase;
 
-class FundAuthPostPaymentTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(FundAuthPostPayment::class)]
+final class FundAuthPostPaymentTest extends AbstractEntityTestCase
 {
-    private FundAuthPostPayment $entity;
-
-    protected function setUp(): void
+    protected function createEntity(): object
     {
-        $this->entity = new FundAuthPostPayment();
+        $entity = new FundAuthPostPayment();
+        $fundAuthOrder = new FundAuthOrder();
+        $entity->setFundAuthOrder($fundAuthOrder);
+
+        return $entity;
     }
 
     /**
-     * 测试 ID 设置与获取
+     * @return iterable<array{string, mixed}>
      */
-    public function testSetAndGetId_withValidId_returnsId(): void
+    public static function propertiesProvider(): iterable
     {
-        $id = 123;
-        $reflection = new \ReflectionClass($this->entity);
+        $fundAuthOrder = new FundAuthOrder();
+        yield 'fundAuthOrder' => ['fundAuthOrder', $fundAuthOrder];
+        yield 'name' => ['name', 'Test Post Payment'];
+        yield 'amount' => ['amount', '10.50'];
+        yield 'description' => ['description', 'Test description'];
+    }
+
+    public function testToStringReturnsName(): void
+    {
+        $entity = new FundAuthPostPayment();
+        $entity->setName('Test Post Payment');
+
+        $this->assertEquals('Test Post Payment', (string) $entity);
+    }
+
+    public function testToStringReturnsIdWhenNameIsNull(): void
+    {
+        $entity = new FundAuthPostPayment();
+        $reflection = new \ReflectionClass($entity);
         $property = $reflection->getProperty('id');
         $property->setAccessible(true);
-        $property->setValue($this->entity, $id);
-        
-        $this->assertEquals($id, $this->entity->getId());
+        $property->setValue($entity, '123');
+
+        $this->assertEquals('123', (string) $entity);
+    }
+
+    public function testRetrievePlainArrayReturnsCorrectData(): void
+    {
+        $entity = new FundAuthPostPayment();
+        $entity->setName('Test Post Payment');
+        $entity->setAmount('10.50');
+        $entity->setDescription('Test description');
+
+        $expected = [
+            'name' => 'Test Post Payment',
+            'amount' => '10.50',
+            'description' => 'Test description',
+        ];
+
+        $this->assertEquals($expected, $entity->retrievePlainArray());
     }
 }

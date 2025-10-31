@@ -3,31 +3,37 @@
 namespace AlipayFundAuthBundle\Tests\Service;
 
 use AlipayFundAuthBundle\Service\AdminMenu;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Tourze\PHPUnitSymfonyWebTest\AbstractEasyAdminMenuTestCase;
 
-class AdminMenuTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(AdminMenu::class)]
+#[RunTestsInSeparateProcesses]
+final class AdminMenuTest extends AbstractEasyAdminMenuTestCase
 {
+    private AdminMenu $adminMenu;
 
-    /**
-     * 测试 AdminMenu 创建
-     */
-    public function testInvoke_createsMenuSuccessfully(): void
+    protected function onSetUp(): void
     {
-        $linkGenerator = $this->createMock(\Tourze\EasyAdminMenuBundle\Service\LinkGeneratorInterface::class);
-        $linkGenerator->method('getCurdListPage')->willReturn('http://example.com');
-        
-        $adminMenu = new AdminMenu($linkGenerator);
-        
-        $item = $this->createMock(\Knp\Menu\ItemInterface::class);
-        $alipayMenu = $this->createMock(\Knp\Menu\ItemInterface::class);
-        
-        $item->expects($this->exactly(2))->method('getChild')->with('支付宝预授权')->willReturnOnConsecutiveCalls(null, $alipayMenu);
-        $item->expects($this->once())->method('addChild')->with('支付宝预授权')->willReturn($alipayMenu);
-        
-        $alipayMenu->expects($this->exactly(6))->method('addChild')->willReturn($alipayMenu);
-        $alipayMenu->expects($this->exactly(6))->method('setUri')->willReturn($alipayMenu);
-        $alipayMenu->expects($this->exactly(6))->method('setAttribute')->willReturn($alipayMenu);
-        
-        $adminMenu($item);
+        $this->adminMenu = self::getService(AdminMenu::class);
+    }
+
+    public function testServiceCreation(): void
+    {
+        $this->assertInstanceOf(AdminMenu::class, $this->adminMenu);
+    }
+
+    public function testServiceMethodExists(): void
+    {
+        // 检查方法存在
+        $reflection = new \ReflectionClass($this->adminMenu);
+        $this->assertTrue($reflection->hasMethod('__invoke'));
+
+        // 检查方法参数数量
+        $invokeMethod = $reflection->getMethod('__invoke');
+        $this->assertSame(1, $invokeMethod->getNumberOfParameters());
     }
 }

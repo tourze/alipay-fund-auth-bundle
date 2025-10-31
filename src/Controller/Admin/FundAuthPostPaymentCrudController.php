@@ -16,8 +16,11 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 
+/**
+ * @extends AbstractCrudController<FundAuthPostPayment>
+ */
 #[AdminCrud(routePath: '/alipay-fund-auth/fund-auth-post-payment', routeName: 'alipay_fund_auth_fund_auth_post_payment')]
-class FundAuthPostPaymentCrudController extends AbstractCrudController
+final class FundAuthPostPaymentCrudController extends AbstractCrudController
 {
     public static function getEntityFqcn(): string
     {
@@ -35,7 +38,8 @@ class FundAuthPostPaymentCrudController extends AbstractCrudController
             ->setPageTitle('new', '新建后付费项目')
             ->setHelp('index', '管理预授权订单的后付费项目')
             ->setDefaultSort(['id' => 'DESC'])
-            ->setSearchFields(['id', 'name', 'description']);
+            ->setSearchFields(['id', 'name', 'description'])
+        ;
     }
 
     public function configureFields(string $pageName): iterable
@@ -51,7 +55,7 @@ class FundAuthPostPaymentCrudController extends AbstractCrudController
     {
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
-            ->reorder(Crud::PAGE_INDEX, [Action::DETAIL, Action::EDIT, Action::DELETE]);
+        ;
     }
 
     public function configureFilters(Filters $filters): Filters
@@ -59,6 +63,7 @@ class FundAuthPostPaymentCrudController extends AbstractCrudController
         return $filters
             ->add(EntityFilter::new('fundAuthOrder', '预授权订单'))
             ->add(TextFilter::new('name', '项目名称'))
-            ->add(TextFilter::new('description', '计费说明'));
+            ->add(TextFilter::new('description', '计费说明'))
+        ;
     }
-} 
+}

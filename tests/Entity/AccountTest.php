@@ -3,179 +3,55 @@
 namespace AlipayFundAuthBundle\Tests\Entity;
 
 use AlipayFundAuthBundle\Entity\Account;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitDoctrineEntity\AbstractEntityTestCase;
 
-class AccountTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(Account::class)]
+final class AccountTest extends AbstractEntityTestCase
 {
-    private Account $account;
-
-    protected function setUp(): void
+    protected function createEntity(): object
     {
-        $this->account = new Account();
+        return new Account();
     }
 
     /**
-     * 测试 ID 设置与获取
+     * @return iterable<array{string, mixed}>
      */
-    public function testSetAndGetId_withValidId_returnsId(): void
+    public static function propertiesProvider(): iterable
     {
-        $id = '123456789';
-        $this->account->setId($id);
-        
-        $this->assertEquals($id, $this->account->getId());
+        yield 'name' => ['name', 'Test Account'];
+        yield 'appId' => ['appId', 'test_app_123'];
+        yield 'rsaPrivateKey' => ['rsaPrivateKey', '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANB\n-----END PRIVATE KEY-----'];
+        yield 'rsaPublicKey' => ['rsaPublicKey', '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhki\n-----END PUBLIC KEY-----'];
+        yield 'valid' => ['valid', true];
+        yield 'createdBy' => ['createdBy', 'admin'];
+        yield 'updatedBy' => ['updatedBy', 'admin'];
+        yield 'createTime' => ['createTime', new \DateTimeImmutable()];
+        yield 'updateTime' => ['updateTime', new \DateTimeImmutable()];
+        yield 'createdFromIp' => ['createdFromIp', '192.168.1.1'];
+        yield 'updatedFromIp' => ['updatedFromIp', '192.168.1.2'];
     }
-    
-    /**
-     * 测试名称设置与获取
-     */
-    public function testSetAndGetName_withValidName_returnsName(): void
+
+    public function testToStringWithNameAndIdReturnsName(): void
     {
-        $name = 'Test Account';
-        $this->account->setName($name);
-        
-        $this->assertEquals($name, $this->account->getName());
-    }
-    
-    /**
-     * 测试 AppID 设置与获取
-     */
-    public function testSetAndGetAppId_withValidAppId_returnsAppId(): void
-    {
-        $appId = 'test_app_123';
-        $this->account->setAppId($appId);
-        
-        $this->assertEquals($appId, $this->account->getAppId());
-    }
-    
-    /**
-     * 测试 RSA 私钥设置与获取
-     */
-    public function testSetAndGetRsaPrivateKey_withValidKey_returnsKey(): void
-    {
-        $key = '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANB\n-----END PRIVATE KEY-----';
-        $this->account->setRsaPrivateKey($key);
-        
-        $this->assertEquals($key, $this->account->getRsaPrivateKey());
-    }
-    
-    /**
-     * 测试 RSA 公钥设置与获取
-     */
-    public function testSetAndGetRsaPublicKey_withValidKey_returnsKey(): void
-    {
-        $key = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhki\n-----END PUBLIC KEY-----';
-        $this->account->setRsaPublicKey($key);
-        
-        $this->assertEquals($key, $this->account->getRsaPublicKey());
-    }
-    
-    /**
-     * 测试有效性设置与获取
-     */
-    public function testSetAndIsValid_withTrue_returnsTrue(): void
-    {
-        $this->account->setValid(true);
-        
-        $this->assertTrue($this->account->isValid());
-    }
-    
-    /**
-     * 测试有效性设置与获取，使用 false
-     */
-    public function testSetAndIsValid_withFalse_returnsFalse(): void
-    {
-        $this->account->setValid(false);
-        
-        $this->assertFalse($this->account->isValid());
-    }
-    
-    /**
-     * 测试 __toString 方法
-     */
-    public function testToString_withNameAndId_returnsName(): void
-    {
+        $account = new Account();
         $name = 'Test Account';
         $id = '123456789';
-        
-        $this->account->setId($id);
-        $this->account->setName($name);
-        
-        $this->assertEquals($name, (string) $this->account);
+
+        $account->setId($id);
+        $account->setName($name);
+
+        $this->assertEquals($name, (string) $account);
     }
-    
-    /**
-     * 测试 __toString 方法，没有 ID 时
-     */
-    public function testToString_withoutId_returnsEmptyString(): void
+
+    public function testToStringWithoutIdReturnsEmptyString(): void
     {
-        $this->account->setName('Test Account');
-        
-        $this->assertEquals('', (string) $this->account);
+        $account = new Account();
+        $account->setName('Test Account');
+
+        $this->assertEquals('', (string) $account);
     }
-    
-    /**
-     * 测试创建人设置与获取
-     */
-    public function testSetAndGetCreatedBy_withValidUser_returnsUser(): void
-    {
-        $user = 'admin';
-        $this->account->setCreatedBy($user);
-        
-        $this->assertEquals($user, $this->account->getCreatedBy());
-    }
-    
-    /**
-     * 测试更新人设置与获取
-     */
-    public function testSetAndGetUpdatedBy_withValidUser_returnsUser(): void
-    {
-        $user = 'admin';
-        $this->account->setUpdatedBy($user);
-        
-        $this->assertEquals($user, $this->account->getUpdatedBy());
-    }
-    
-    /**
-     * 测试创建时间设置与获取
-     */
-    public function testSetAndGetCreateTime_withDateTime_returnsDateTime(): void
-    {
-        $dateTime = new \DateTimeImmutable();
-        $this->account->setCreateTime($dateTime);
-        
-        $this->assertSame($dateTime, $this->account->getCreateTime());
-    }
-    
-    /**
-     * 测试更新时间设置与获取
-     */
-    public function testSetAndGetUpdateTime_withDateTime_returnsDateTime(): void
-    {
-        $dateTime = new \DateTimeImmutable();
-        $this->account->setUpdateTime($dateTime);
-        
-        $this->assertSame($dateTime, $this->account->getUpdateTime());
-    }
-    
-    /**
-     * 测试创建IP设置与获取
-     */
-    public function testSetAndGetCreatedFromIp_withValidIp_returnsIp(): void
-    {
-        $ip = '192.168.1.1';
-        $this->account->setCreatedFromIp($ip);
-        
-        $this->assertEquals($ip, $this->account->getCreatedFromIp());
-    }
-    
-    /**
-     * 测试更新IP设置与获取
-     */
-    public function testSetAndGetUpdatedFromIp_withValidIp_returnsIp(): void
-    {
-        $ip = '192.168.1.1';
-        $this->account->setUpdatedFromIp($ip);
-        
-        $this->assertEquals($ip, $this->account->getUpdatedFromIp());
-    }
-} 
+}

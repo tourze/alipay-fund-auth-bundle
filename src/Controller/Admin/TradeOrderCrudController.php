@@ -25,8 +25,11 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 
+/**
+ * @extends AbstractCrudController<TradeOrder>
+ */
 #[AdminCrud(routePath: '/alipay-fund-auth/trade-order', routeName: 'alipay_fund_auth_trade_order')]
-class TradeOrderCrudController extends AbstractCrudController
+final class TradeOrderCrudController extends AbstractCrudController
 {
     public static function getEntityFqcn(): string
     {
@@ -44,7 +47,8 @@ class TradeOrderCrudController extends AbstractCrudController
             ->setPageTitle('new', '新建交易订单')
             ->setHelp('index', '管理支付宝交易订单')
             ->setDefaultSort(['id' => 'DESC'])
-            ->setSearchFields(['id', 'outTradeNo', 'tradeNo', 'subject', 'buyerLogonId']);
+            ->setSearchFields(['id', 'outTradeNo', 'tradeNo', 'subject', 'buyerLogonId'])
+        ;
     }
 
     public function configureFields(string $pageName): iterable
@@ -63,7 +67,8 @@ class TradeOrderCrudController extends AbstractCrudController
             ->formatValue(function ($value) {
                 return $value instanceof AuthConfirmMode ? $value->getLabel() : '';
             })
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
         yield TextField::new('storeId', '门店编号')->hideOnIndex();
         yield TextField::new('terminalId', '终端编号')->hideOnIndex();
         yield TextField::new('tradeNo', '支付宝交易号')->hideOnForm();
@@ -82,21 +87,24 @@ class TradeOrderCrudController extends AbstractCrudController
             ->formatValue(function ($value) {
                 return $value instanceof AsyncPaymentMode ? $value->getLabel() : '';
             })
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
         yield ChoiceField::new('authTradePayMode', '预授权支付模式')
             ->setFormType(EnumType::class)
             ->setFormTypeOptions(['class' => AuthTradePayMode::class])
             ->formatValue(function ($value) {
                 return $value instanceof AuthTradePayMode ? $value->getLabel() : '';
             })
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
         yield ChoiceField::new('payType', '支付类型')
             ->setFormType(EnumType::class)
             ->setFormTypeOptions(['class' => AliPayType::class])
             ->formatValue(function ($value) {
                 return $value instanceof AliPayType ? $value->getLabel() : '';
             })
-            ->hideOnIndex();
+            ->hideOnIndex()
+        ;
         yield MoneyField::new('mdiscountAmount', '商家优惠金额')->setCurrency('CNY')->hideOnForm();
         yield MoneyField::new('discountAmount', '平台优惠金额')->setCurrency('CNY')->hideOnForm();
         yield TextField::new('tradeStatus', '交易状态');
@@ -108,7 +116,7 @@ class TradeOrderCrudController extends AbstractCrudController
     {
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
-            ->reorder(Crud::PAGE_INDEX, [Action::DETAIL, Action::EDIT, Action::DELETE]);
+        ;
     }
 
     public function configureFilters(Filters $filters): Filters
@@ -128,6 +136,7 @@ class TradeOrderCrudController extends AbstractCrudController
             ->add(ChoiceFilter::new('payType', '支付类型')->setChoices($payTypeChoices))
             ->add(DateTimeFilter::new('gmtPayment', '支付时间'))
             ->add(DateTimeFilter::new('createTime', '创建时间'))
-            ->add(DateTimeFilter::new('updateTime', '更新时间'));
+            ->add(DateTimeFilter::new('updateTime', '更新时间'))
+        ;
     }
-} 
+}

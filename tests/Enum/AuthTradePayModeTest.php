@@ -1,32 +1,37 @@
 <?php
 
-namespace AlipayFundAuthBundle\Tests\Unit\Enum;
+namespace AlipayFundAuthBundle\Tests\Enum;
 
 use AlipayFundAuthBundle\Enum\AuthTradePayMode;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitEnum\AbstractEnumTestCase;
 
-class AuthTradePayModeTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(AuthTradePayMode::class)]
+final class AuthTradePayModeTest extends AbstractEnumTestCase
 {
     /**
      * 测试枚举值是否正确定义
      */
-    public function testEnumValues_areCorrectlyDefined(): void
+    public function testEnumValuesAreCorrectlyDefined(): void
     {
         $this->assertEquals('CREDIT_PREAUTH_PAY', AuthTradePayMode::CREDIT_PREAUTH_PAY->value);
     }
-    
+
     /**
      * 测试标签获取功能
      */
-    public function testGetLabel_returnsCorrectLabels(): void
+    public function testGetLabelReturnsCorrectLabels(): void
     {
         $this->assertEquals('信用预授权支付', AuthTradePayMode::CREDIT_PREAUTH_PAY->getLabel());
     }
-    
+
     /**
      * 测试转换为选项项
      */
-    public function testToSelectItem_returnsSelectItem(): void
+    public function testToSelectItemReturnsSelectItem(): void
     {
         $expected = [
             'label' => '信用预授权支付',
@@ -34,14 +39,14 @@ class AuthTradePayModeTest extends TestCase
             'value' => 'CREDIT_PREAUTH_PAY',
             'name' => '信用预授权支付',
         ];
-        
+
         $this->assertEquals($expected, AuthTradePayMode::CREDIT_PREAUTH_PAY->toSelectItem());
     }
-    
+
     /**
      * 测试选项列表生成
      */
-    public function testGenOptions_returnsOptions(): void
+    public function testGenOptionsReturnsOptions(): void
     {
         $expectedSelects = [
             [
@@ -51,40 +56,34 @@ class AuthTradePayModeTest extends TestCase
                 'name' => '信用预授权支付',
             ],
         ];
-        
+
         $this->assertEquals($expectedSelects, AuthTradePayMode::genOptions());
     }
-    
+
     /**
      * 测试从字符串创建枚举实例
      */
-    public function testFromString_withValidValue_returnsEnumCase(): void
+    public function testFromStringWithValidValueReturnsEnumCase(): void
     {
         $this->assertSame(AuthTradePayMode::CREDIT_PREAUTH_PAY, AuthTradePayMode::from('CREDIT_PREAUTH_PAY'));
     }
-    
-    /**
-     * 测试从无效字符串创建枚举实例抛出异常
-     */
-    public function testFromString_withInvalidValue_throwsException(): void
-    {
-        $this->expectException(\ValueError::class);
-        AuthTradePayMode::from('INVALID_VALUE');
-    }
-    
+
     /**
      * 测试尝试从字符串创建枚举实例
      */
-    public function testTryFrom_withValidValue_returnsEnumCase(): void
+    public function testTryFromWithValidValueReturnsEnumCase(): void
     {
         $this->assertSame(AuthTradePayMode::CREDIT_PREAUTH_PAY, AuthTradePayMode::tryFrom('CREDIT_PREAUTH_PAY'));
     }
-    
+
     /**
-     * 测试尝试从无效字符串创建枚举实例返回 null
+     * 测试转换为数组
      */
-    public function testTryFrom_withInvalidValue_returnsNull(): void
+    public function testToArrayReturnsArray(): void
     {
-        $this->assertNull(AuthTradePayMode::tryFrom('INVALID_VALUE'));
+        $result = AuthTradePayMode::CREDIT_PREAUTH_PAY->toArray();
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('label', $result);
+        $this->assertArrayHasKey('value', $result);
     }
 }

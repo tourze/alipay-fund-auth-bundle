@@ -3,23 +3,43 @@
 namespace AlipayFundAuthBundle\Tests\Procedure;
 
 use AlipayFundAuthBundle\Procedure\CreateAlipayPreauthTradeOrder;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Tourze\JsonRPC\Core\Tests\AbstractProcedureTestCase;
 
-class CreateAlipayPreauthTradeOrderTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(CreateAlipayPreauthTradeOrder::class)]
+#[RunTestsInSeparateProcesses]
+final class CreateAlipayPreauthTradeOrderTest extends AbstractProcedureTestCase
 {
-    private CreateAlipayPreauthTradeOrder $procedure;
-
-    protected function setUp(): void
+    protected function onSetUp(): void
     {
-        $sdkService = $this->createMock(\AlipayFundAuthBundle\Service\SdkService::class);
-        $this->procedure = new CreateAlipayPreauthTradeOrder($sdkService);
+        // 不需要特殊的设置，使用父类的默认设置
     }
 
     /**
      * 测试 Procedure 创建
      */
-    public function testCreateProcedure_createsSuccessfully(): void
+    public function testCreateProcedureCreatesSuccessfully(): void
     {
-        $this->assertInstanceOf(CreateAlipayPreauthTradeOrder::class, $this->procedure);
+        $procedure = self::getService(CreateAlipayPreauthTradeOrder::class);
+        $this->assertInstanceOf(CreateAlipayPreauthTradeOrder::class, $procedure);
+    }
+
+    /**
+     * 测试 execute 方法
+     */
+    public function testExecute(): void
+    {
+        // 从容器中获取 Procedure 实例
+        $procedure = self::getService(CreateAlipayPreauthTradeOrder::class);
+
+        // 检查 execute 方法存在且可调用，但不执行实际的 API 调用
+        $reflection = new \ReflectionMethod($procedure, 'execute');
+        $this->assertTrue($reflection->isPublic());
+        $this->assertSame(0, $reflection->getNumberOfParameters());
+        $this->assertSame('execute', $reflection->getName());
     }
 }

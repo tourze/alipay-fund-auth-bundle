@@ -19,8 +19,11 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\NumericFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 
+/**
+ * @extends AbstractCrudController<TradeGoodsDetail>
+ */
 #[AdminCrud(routePath: '/alipay-fund-auth/trade-goods-detail', routeName: 'alipay_fund_auth_trade_goods_detail')]
-class TradeGoodsDetailCrudController extends AbstractCrudController
+final class TradeGoodsDetailCrudController extends AbstractCrudController
 {
     public static function getEntityFqcn(): string
     {
@@ -38,7 +41,8 @@ class TradeGoodsDetailCrudController extends AbstractCrudController
             ->setPageTitle('new', '新建商品信息')
             ->setHelp('index', '管理交易订单的商品详细信息')
             ->setDefaultSort(['id' => 'DESC'])
-            ->setSearchFields(['id', 'goodsId', 'goodsName', 'goodsCategory']);
+            ->setSearchFields(['id', 'goodsId', 'goodsName', 'goodsCategory'])
+        ;
     }
 
     public function configureFields(string $pageName): iterable
@@ -58,7 +62,7 @@ class TradeGoodsDetailCrudController extends AbstractCrudController
     {
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
-            ->reorder(Crud::PAGE_INDEX, [Action::DETAIL, Action::EDIT, Action::DELETE]);
+        ;
     }
 
     public function configureFilters(Filters $filters): Filters
@@ -69,6 +73,7 @@ class TradeGoodsDetailCrudController extends AbstractCrudController
             ->add(TextFilter::new('goodsName', '商品名称'))
             ->add(TextFilter::new('goodsCategory', '商品类目'))
             ->add(NumericFilter::new('quantity', '商品数量'))
-            ->add(NumericFilter::new('price', '商品单价'));
+            ->add(NumericFilter::new('price', '商品单价'))
+        ;
     }
-} 
+}

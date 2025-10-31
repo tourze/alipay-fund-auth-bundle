@@ -22,8 +22,11 @@ use EasyCorp\Bundle\EasyAdminBundle\Filter\EntityFilter;
 use EasyCorp\Bundle\EasyAdminBundle\Filter\TextFilter;
 use Symfony\Component\Form\Extension\Core\Type\EnumType;
 
+/**
+ * @extends AbstractCrudController<FundAuthOrder>
+ */
 #[AdminCrud(routePath: '/alipay-fund-auth/fund-auth-order', routeName: 'alipay_fund_auth_fund_auth_order')]
-class FundAuthOrderCrudController extends AbstractCrudController
+final class FundAuthOrderCrudController extends AbstractCrudController
 {
     public static function getEntityFqcn(): string
     {
@@ -41,7 +44,8 @@ class FundAuthOrderCrudController extends AbstractCrudController
             ->setPageTitle('new', '新建预授权订单')
             ->setHelp('index', '管理支付宝资金预授权订单')
             ->setDefaultSort(['id' => 'DESC'])
-            ->setSearchFields(['id', 'outOrderNo', 'outRequestNo', 'orderTitle', 'authNo']);
+            ->setSearchFields(['id', 'outOrderNo', 'outRequestNo', 'orderTitle', 'authNo'])
+        ;
     }
 
     public function configureFields(string $pageName): iterable
@@ -67,7 +71,8 @@ class FundAuthOrderCrudController extends AbstractCrudController
             ->setFormTypeOptions(['class' => FundAuthOrderStatus::class])
             ->formatValue(function ($value) {
                 return $value instanceof FundAuthOrderStatus ? $value->getLabel() : '';
-            });
+            })
+        ;
         yield DateTimeField::new('gmtTrans', '交易时间')->hideOnForm();
         yield TextField::new('payerUserId', '付款方用户ID')->hideOnForm();
         yield TextField::new('preAuthType', '预授权类型')->hideOnForm();
@@ -79,7 +84,7 @@ class FundAuthOrderCrudController extends AbstractCrudController
     {
         return $actions
             ->add(Crud::PAGE_INDEX, Action::DETAIL)
-            ->reorder(Crud::PAGE_INDEX, [Action::DETAIL, Action::EDIT, Action::DELETE]);
+        ;
     }
 
     public function configureFilters(Filters $filters): Filters
@@ -95,6 +100,7 @@ class FundAuthOrderCrudController extends AbstractCrudController
             ->add(TextFilter::new('outRequestNo', '商户请求号'))
             ->add(TextFilter::new('orderTitle', '订单标题'))
             ->add(ChoiceFilter::new('status', '状态')->setChoices($statusChoices))
-            ->add(DateTimeFilter::new('gmtTrans', '交易时间'));
+            ->add(DateTimeFilter::new('gmtTrans', '交易时间'))
+        ;
     }
-} 
+}
