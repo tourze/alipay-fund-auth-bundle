@@ -5,7 +5,7 @@ namespace AlipayFundAuthBundle\Tests\Procedure;
 use AlipayFundAuthBundle\Procedure\CreateAlipayPreauthTradeOrder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
-use Tourze\JsonRPC\Core\Tests\AbstractProcedureTestCase;
+use Tourze\PHPUnitJsonRPC\AbstractProcedureTestCase;
 
 /**
  * @internal
@@ -36,10 +36,10 @@ final class CreateAlipayPreauthTradeOrderTest extends AbstractProcedureTestCase
         // 从容器中获取 Procedure 实例
         $procedure = self::getService(CreateAlipayPreauthTradeOrder::class);
 
-        // 检查 execute 方法存在且可调用，但不执行实际的 API 调用
+        // 检查 execute 方法存在且可调用
         $reflection = new \ReflectionMethod($procedure, 'execute');
         $this->assertTrue($reflection->isPublic());
-        $this->assertSame(0, $reflection->getNumberOfParameters());
+        $this->assertSame(1, $reflection->getNumberOfParameters());
         $this->assertSame('execute', $reflection->getName());
     }
 }

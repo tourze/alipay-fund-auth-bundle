@@ -371,6 +371,155 @@ final class TradeGoodsDetailRepositoryTest extends AbstractRepositoryTestCase
         $this->assertSame(1, $order2Count);
     }
 
+    public function testCreateWithRelationsQueryBuilder(): void
+    {
+        $this->clearDatabase();
+
+        $tradeOrder = $this->createTradeOrder();
+
+        $goodsDetail = new TradeGoodsDetail();
+        $goodsDetail->setTradeOrder($tradeOrder);
+        $goodsDetail->setGoodsId('test_goods_id');
+        $goodsDetail->setGoodsName('测试商品');
+        $goodsDetail->setQuantity(1);
+        $goodsDetail->setPrice('100.00');
+        $this->repository->save($goodsDetail);
+
+        $queryBuilder = $this->repository->createWithRelationsQueryBuilder();
+        $results = $queryBuilder->getQuery()->getResult();
+
+        $this->assertCount(1, $results);
+        $this->assertInstanceOf(TradeGoodsDetail::class, $results[0]);
+        $this->assertInstanceOf(TradeOrder::class, $results[0]->getTradeOrder());
+        $this->assertSame('测试商品', $results[0]->getGoodsName());
+        $this->assertSame($tradeOrder->getId(), $results[0]->getTradeOrder()->getId());
+    }
+
+    public function testFindByGoodsCategory(): void
+    {
+        $this->clearDatabase();
+
+        $tradeOrder = $this->createTradeOrder();
+
+        $goods1 = new TradeGoodsDetail();
+        $goods1->setTradeOrder($tradeOrder);
+        $goods1->setGoodsId('goods_1');
+        $goods1->setGoodsName('电子产品1');
+        $goods1->setQuantity(1);
+        $goods1->setPrice('100.00');
+        $goods1->setGoodsCategory('电子产品');
+        $this->repository->save($goods1);
+
+        $goods2 = new TradeGoodsDetail();
+        $goods2->setTradeOrder($tradeOrder);
+        $goods2->setGoodsId('goods_2');
+        $goods2->setGoodsName('电子产品2');
+        $goods2->setQuantity(2);
+        $goods2->setPrice('200.00');
+        $goods2->setGoodsCategory('电子产品');
+        $this->repository->save($goods2);
+
+        $goods3 = new TradeGoodsDetail();
+        $goods3->setTradeOrder($tradeOrder);
+        $goods3->setGoodsId('goods_3');
+        $goods3->setGoodsName('书籍');
+        $goods3->setQuantity(1);
+        $goods3->setPrice('50.00');
+        $goods3->setGoodsCategory('图书');
+        $this->repository->save($goods3);
+
+        $electronicGoods = $this->repository->findByGoodsCategory('电子产品');
+        $this->assertCount(2, $electronicGoods);
+        $this->assertSame('电子产品1', $electronicGoods[0]->getGoodsName());
+        $this->assertSame('电子产品2', $electronicGoods[1]->getGoodsName());
+
+        $bookGoods = $this->repository->findByGoodsCategory('图书');
+        $this->assertCount(1, $bookGoods);
+        $this->assertSame('书籍', $bookGoods[0]->getGoodsName());
+    }
+
+    public function testFindByGoodsId(): void
+    {
+        $this->clearDatabase();
+
+        $tradeOrder = $this->createTradeOrder();
+
+        $goods1 = new TradeGoodsDetail();
+        $goods1->setTradeOrder($tradeOrder);
+        $goods1->setGoodsId('unique_goods_id_123');
+        $goods1->setGoodsName('商品1');
+        $goods1->setQuantity(1);
+        $goods1->setPrice('100.00');
+        $this->repository->save($goods1);
+
+        $goods2 = new TradeGoodsDetail();
+        $goods2->setTradeOrder($tradeOrder);
+        $goods2->setGoodsId('unique_goods_id_456');
+        $goods2->setGoodsName('商品2');
+        $goods2->setQuantity(2);
+        $goods2->setPrice('200.00');
+        $this->repository->save($goods2);
+
+        $foundGoods1 = $this->repository->findByGoodsId('unique_goods_id_123');
+        $this->assertCount(1, $foundGoods1);
+        $this->assertSame('商品1', $foundGoods1[0]->getGoodsName());
+        $this->assertSame('unique_goods_id_123', $foundGoods1[0]->getGoodsId());
+
+        $foundGoods2 = $this->repository->findByGoodsId('unique_goods_id_456');
+        $this->assertCount(1, $foundGoods2);
+        $this->assertSame('商品2', $foundGoods2[0]->getGoodsName());
+
+        $notFoundGoods = $this->repository->findByGoodsId('non_existent_id');
+        $this->assertCount(0, $notFoundGoods);
+    }
+
+    public function testFindByGoodsNameContaining(): void
+    {
+        $this->clearDatabase();
+
+        $tradeOrder = $this->createTradeOrder();
+
+        $goods1 = new TradeGoodsDetail();
+        $goods1->setTradeOrder($tradeOrder);
+        $goods1->setGoodsId('goods_1');
+        $goods1->setGoodsName('苹果手机');
+        $goods1->setQuantity(1);
+        $goods1->setPrice('5000.00');
+        $this->repository->save($goods1);
+
+        $goods2 = new TradeGoodsDetail();
+        $goods2->setTradeOrder($tradeOrder);
+        $goods2->setGoodsId('goods_2');
+        $goods2->setGoodsName('苹果电脑');
+        $goods2->setQuantity(1);
+        $goods2->setPrice('10000.00');
+        $this->repository->save($goods2);
+
+        $goods3 = new TradeGoodsDetail();
+        $goods3->setTradeOrder($tradeOrder);
+        $goods3->setGoodsId('goods_3');
+        $goods3->setGoodsName('华为手机');
+        $goods3->setQuantity(1);
+        $goods3->setPrice('4000.00');
+        $this->repository->save($goods3);
+
+        $appleProducts = $this->repository->findByGoodsNameContaining('苹果');
+        $this->assertCount(2, $appleProducts);
+        $goodsNames = array_map(fn ($goods) => $goods->getGoodsName(), $appleProducts);
+        $this->assertContains('苹果手机', $goodsNames);
+        $this->assertContains('苹果电脑', $goodsNames);
+
+        $phones = $this->repository->findByGoodsNameContaining('手机');
+        $this->assertCount(2, $phones);
+
+        $computers = $this->repository->findByGoodsNameContaining('电脑');
+        $this->assertCount(1, $computers);
+        $this->assertSame('苹果电脑', $computers[0]->getGoodsName());
+
+        $notFound = $this->repository->findByGoodsNameContaining('不存在的商品');
+        $this->assertCount(0, $notFound);
+    }
+
     public function testFindByNullableFieldsShouldSupportIsNullQueries(): void
     {
         $this->clearDatabase();

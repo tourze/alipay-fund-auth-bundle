@@ -9,6 +9,7 @@ use AlipayFundAuthBundle\Repository\AccountRepository;
 use AlipayFundAuthBundle\Repository\FundAuthOrderRepository;
 use AlipayFundAuthBundle\Repository\FundAuthUnfreezeLogRepository;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Tourze\PHPUnitSymfonyKernelTest\AbstractRepositoryTestCase;
@@ -392,6 +393,76 @@ final class FundAuthUnfreezeLogRepositoryTest extends AbstractRepositoryTestCase
         $foundOrder = $foundLog->getFundAuthOrder();
         $this->assertInstanceOf(FundAuthOrder::class, $foundOrder);
         $this->assertSame($order1->getId(), $foundOrder->getId());
+    }
+
+    public function testCreateWithRelationsQueryBuilder(): void
+    {
+        $this->clearDatabase();
+
+        $order = $this->createFundAuthOrder();
+
+        $unfreezeLog = new FundAuthUnfreezeLog();
+        $unfreezeLog->setFundAuthOrder($order);
+        $unfreezeLog->setOutRequestNo('test_qb_unfreeze');
+        $unfreezeLog->setAmount('60.00');
+        $unfreezeLog->setRemark('测试QueryBuilder解冻记录');
+        $unfreezeLog->setStatus('SUCCESS');
+        $this->repository->save($unfreezeLog);
+
+        $queryBuilder = $this->repository->createWithRelationsQueryBuilder();
+        $this->assertInstanceOf(QueryBuilder::class, $queryBuilder);
+
+        $results = $queryBuilder->getQuery()->getResult();
+        $this->assertCount(1, $results);
+        $this->assertInstanceOf(FundAuthUnfreezeLog::class, $results[0]);
+        $this->assertSame('测试QueryBuilder解冻记录', $results[0]->getRemark());
+        $this->assertInstanceOf(FundAuthOrder::class, $results[0]->getFundAuthOrder());
+        $this->assertSame($order->getId(), $results[0]->getFundAuthOrder()->getId());
+    }
+
+    public function testFindByDateRange(): void
+    {
+        $this->clearDatabase();
+
+        $order = $this->createFundAuthOrder();
+
+        $startTime = new \DateTimeImmutable('2024-01-01 00:00:00');
+        $midTime = new \DateTimeImmutable('2024-02-15 12:00:00');
+        $endTime = new \DateTimeImmutable('2024-03-31 23:59:59');
+
+        $log1 = new FundAuthUnfreezeLog();
+        $log1->setFundAuthOrder($order);
+        $log1->setOutRequestNo('unfreeze_early');
+        $log1->setAmount('30.00');
+        $log1->setRemark('早期解冻记录');
+        $log1->setGmtTrans($startTime);
+        $this->repository->save($log1);
+
+        $log2 = new FundAuthUnfreezeLog();
+        $log2->setFundAuthOrder($order);
+        $log2->setOutRequestNo('unfreeze_mid');
+        $log2->setAmount('50.00');
+        $log2->setRemark('中期解冻记录');
+        $log2->setGmtTrans($midTime);
+        $this->repository->save($log2);
+
+        $log3 = new FundAuthUnfreezeLog();
+        $log3->setFundAuthOrder($order);
+        $log3->setOutRequestNo('unfreeze_late');
+        $log3->setAmount('70.00');
+        $log3->setRemark('晚期解冻记录');
+        $log3->setGmtTrans($endTime);
+        $this->repository->save($log3);
+
+        $rangeStart = new \DateTimeImmutable('2024-02-01 00:00:00');
+        $rangeEnd = new \DateTimeImmutable('2024-03-01 00:00:00');
+
+        $results = $this->repository->findByDateRange($rangeStart, $rangeEnd);
+
+        $this->assertIsArray($results);
+        $this->assertCount(1, $results);
+        $this->assertInstanceOf(FundAuthUnfreezeLog::class, $results[0]);
+        $this->assertSame('中期解冻记录', $results[0]->getRemark());
     }
 
     /**

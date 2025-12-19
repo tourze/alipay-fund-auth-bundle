@@ -12,9 +12,12 @@ use AlipayFundAuthBundle\Entity\TradeOrder;
 use AlipayFundAuthBundle\Exception\InvalidFundAuthOrderException;
 use AlipayFundAuthBundle\Service\SdkService;
 use AlipayFundAuthBundle\Service\TradeOrderResultUpdater;
+use AlipayFundAuthBundle\Param\CreateAlipayPreauthTradeOrderParam;
 use Tourze\JsonRPC\Core\Attribute\MethodDoc;
 use Tourze\JsonRPC\Core\Attribute\MethodExpose;
 use Tourze\JsonRPC\Core\Attribute\MethodTag;
+use Tourze\JsonRPC\Core\Contracts\RpcParamInterface;
+use Tourze\JsonRPC\Core\Result\ArrayResult;
 use Tourze\JsonRPCLockBundle\Procedure\LockableProcedure;
 use Tourze\JsonRPCLogBundle\Attribute\Log;
 
@@ -30,7 +33,10 @@ class CreateAlipayPreauthTradeOrder extends LockableProcedure
     ) {
     }
 
-    public function execute(): array
+    /**
+     * @phpstan-param CreateAlipayPreauthTradeOrderParam $param
+     */
+    public function execute(CreateAlipayPreauthTradeOrderParam|RpcParamInterface $param): ArrayResult
     {
         $tradeOrder = new TradeOrder();
         $this->validateTradeOrder($tradeOrder);
@@ -44,7 +50,7 @@ class CreateAlipayPreauthTradeOrder extends LockableProcedure
 
         $this->resultUpdater->updateFromResult($tradeOrder, $apiResult);
 
-        return ['__message' => '创建成功'];
+        return new ArrayResult(['__message' => '创建成功']);
     }
 
     private function validateTradeOrder(TradeOrder $tradeOrder): void
@@ -81,7 +87,7 @@ class CreateAlipayPreauthTradeOrder extends LockableProcedure
         $this->setModelGoodsDetails($model, $tradeOrder);
         $this->setModelStoreFields($model, $tradeOrder);
 
-        return $model;
+        return new ArrayResult($model);
     }
 
     /**
@@ -131,7 +137,7 @@ class CreateAlipayPreauthTradeOrder extends LockableProcedure
         $goodsDetail->setCategoriesTree($detail->getCategoryTree());
         $goodsDetail->setShowUrl($detail->getShowUrl());
 
-        return $goodsDetail;
+        return new ArrayResult($goodsDetail);
     }
 
     /**

@@ -13,13 +13,30 @@ use AlipayFundAuthBundle\Service\SdkService;
 use Carbon\CarbonImmutable;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\Events;
+use Monolog\Attribute\WithMonologChannel;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Throwable;
 
 #[AsEntityListener(event: Events::prePersist, method: 'prePersist', entity: FundAuthOrder::class)]
-class FundAuthOrderListener
+#[WithMonologChannel(channel: 'alipay_fund_auth')]
+final class FundAuthOrderListener
 {
-    public function __construct(private readonly SdkService $sdkService, private readonly string $environment = 'prod')
-    {
+    private const SKIP_ENVIRONMENTS = ['test', 'dev'];
+
+    public function __construct(
+        private readonly SdkService $sdkService,
+        private readonly LoggerInterface $logger,
+        #[Autowire(param: 'kernel.environment')]
+        ?string $environment = null,
+    ) {
+        $this->environment = $environment ?? 'prod';
     }
+
+    /**
+     * @var string
+     */
+    private string $environment;
 
     /**
      * 创建本地前，同步一次到远程
@@ -28,7 +45,12 @@ class FundAuthOrderListener
      */
     public function prePersist(FundAuthOrder $object): void
     {
-        if (in_array($this->environment, ['test', 'dev'], true)) {
+        if (in_array($this->environment, self::SKIP_ENVIRONMENTS, true)) {
+            $this->logger->debug('Skipping FundAuthOrder persistence in {env} environment', [
+                'env' => $this->environment,
+                'orderNo' => $object->getOutOrderNo(),
+            ]);
+
             return;
         }
 
@@ -36,10 +58,20 @@ class FundAuthOrderListener
         if (null === $account) {
             throw new InvalidFundAuthOrderException('FundAuthOrder must have an account');
         }
-        $api = $this->sdkService->getFundAuthOrderApi($account);
-        $model = $this->buildFreezeModel($object);
-        $result = $api->freeze($model);
-        $this->updateOrderFromResult($object, $result);
+
+        try {
+            $api = $this->sdkService->getFundAuthOrderApi($account);
+            $model = $this->buildFreezeModel($object);
+            $result = $api->freeze($model);
+            $this->updateOrderFromResult($object, $result);
+        } catch (\Throwable $e) {
+            $this->logger->error('Failed to freeze fund auth order', [
+                'orderNo' => $object->getOutOrderNo(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 
     /**
@@ -84,12 +116,8 @@ class FundAuthOrderListener
      */
     private function setPayeeFields(AlipayFundAuthOrderFreezeModel $model, FundAuthOrder $object): void
     {
-        if (null !== $object->getPayeeUserId() && '' !== $object->getPayeeUserId()) {
-            $model->setPayeeUserId($object->getPayeeUserId());
-        }
-        if (null !== $object->getPayeeLogonId() && '' !== $object->getPayeeLogonId()) {
-            $model->setPayeeLogonId($object->getPayeeLogonId());
-        }
+        $this->setIfNotEmpty($model, 'setPayeeUserId', $object->getPayeeUserId());
+        $this->setIfNotEmpty($model, 'setPayeeLogonId', $object->getPayeeLogonId());
     }
 
     /**
@@ -97,12 +125,8 @@ class FundAuthOrderListener
      */
     private function setTimeoutFields(AlipayFundAuthOrderFreezeModel $model, FundAuthOrder $object): void
     {
-        if (null !== $object->getPayTimeout() && '' !== $object->getPayTimeout()) {
-            $model->setPayTimeout($object->getPayTimeout());
-        }
-        if (null !== $object->getTimeExpress() && '' !== $object->getTimeExpress()) {
-            $model->setTimeoutExpress($object->getTimeExpress());
-        }
+        $this->setIfNotEmpty($model, 'setPayTimeout', $object->getPayTimeout());
+        $this->setIfNotEmpty($model, 'setTimeoutExpress', $object->getTimeExpress());
     }
 
     /**
@@ -110,11 +134,29 @@ class FundAuthOrderListener
      */
     private function setCurrencyFields(AlipayFundAuthOrderFreezeModel $model, FundAuthOrder $object): void
     {
-        if (null !== $object->getTransCurrency() && '' !== $object->getTransCurrency()) {
-            $model->setTransCurrency($object->getTransCurrency());
-        }
-        if (null !== $object->getSettleCurrency() && '' !== $object->getSettleCurrency()) {
-            $model->setSettleCurrency($object->getSettleCurrency());
+        $this->setIfNotEmpty($model, 'setTransCurrency', $object->getTransCurrency());
+        $this->setIfNotEmpty($model, 'setSettleCurrency', $object->getSettleCurrency());
+    }
+
+    /**
+     * Helper method to set non-empty string values
+     *
+     * @param AlipayFundAuthOrderFreezeModel<mixed,mixed> $model
+     */
+    private function setIfNotEmpty(object $model, string $setterMethod, ?string $value): void
+    {
+        if (null !== $value && '' !== $value) {
+            match ($setterMethod) {
+                'setPayeeUserId' => $model->setPayeeUserId($value),
+                'setPayeeLogonId' => $model->setPayeeLogonId($value),
+                'setPayTimeout' => $model->setPayTimeout($value),
+                'setTimeoutExpress' => $model->setTimeoutExpress($value),
+                'setTransCurrency' => $model->setTransCurrency($value),
+                'setSettleCurrency' => $model->setSettleCurrency($value),
+                'setSceneCode' => $model->setSceneCode($value),
+                'setTransCurrency' => $model->setTransCurrency($value),
+                default => throw new \InvalidArgumentException("Unknown setter method: {$setterMethod}"),
+            };
         }
     }
 
@@ -123,9 +165,7 @@ class FundAuthOrderListener
      */
     private function setSceneField(AlipayFundAuthOrderFreezeModel $model, FundAuthOrder $object): void
     {
-        if (null !== $object->getSceneCode() && '' !== $object->getSceneCode()) {
-            $model->setSceneCode($object->getSceneCode());
-        }
+        $this->setIfNotEmpty($model, 'setSceneCode', $object->getSceneCode());
     }
 
     /**
@@ -135,18 +175,14 @@ class FundAuthOrderListener
     {
         $extraParam = $object->getExtraParam();
         if (null !== $extraParam && [] !== $extraParam) {
-            $jsonExtraParam = json_encode($extraParam);
-            if (false !== $jsonExtraParam) {
-                $model->setExtraParam($jsonExtraParam);
-            }
+            $jsonExtraParam = json_encode($extraParam, JSON_THROW_ON_ERROR);
+            $model->setExtraParam($jsonExtraParam);
         }
 
         $businessParams = $object->getBusinessParams();
         if (null !== $businessParams && [] !== $businessParams) {
-            $jsonBusinessParams = json_encode($businessParams);
-            if (false !== $jsonBusinessParams) {
-                $model->setBusinessParams($jsonBusinessParams);
-            }
+            $jsonBusinessParams = json_encode($businessParams, JSON_THROW_ON_ERROR);
+            $model->setBusinessParams($jsonBusinessParams);
         }
     }
 
@@ -267,8 +303,6 @@ class FundAuthOrderListener
     private function setTransCurrencyFromResult(FundAuthOrder $object, AlipayFundAuthOrderFreezeResponseModel $result): void
     {
         $transCurrency = $result->getTransCurrency();
-        if (null !== $transCurrency && '' !== $transCurrency && is_string($transCurrency)) {
-            $object->setTransCurrency($transCurrency);
-        }
+        $this->setIfNotEmpty($object, 'setTransCurrency', $transCurrency);
     }
 }

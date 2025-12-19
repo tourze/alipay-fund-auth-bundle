@@ -2,10 +2,17 @@
 
 namespace AlipayFundAuthBundle\Tests\EventSubscriber;
 
+use AlipayFundAuthBundle\Entity\Account;
+use AlipayFundAuthBundle\Entity\FundAuthOrder;
+use AlipayFundAuthBundle\Entity\FundAuthUnfreezeLog;
 use AlipayFundAuthBundle\EventSubscriber\FundAuthUnfreezeLogListener;
+use AlipayFundAuthBundle\Exception\InvalidFundAuthOrderException;
 use AlipayFundAuthBundle\Service\SdkService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\Assert;
+use Psr\Log\LoggerInterface;
 use Tourze\PHPUnitSymfonyKernelTest\AbstractIntegrationTestCase;
 
 /**
@@ -17,7 +24,7 @@ final class FundAuthUnfreezeLogListenerTest extends AbstractIntegrationTestCase
 {
     protected function onSetUp(): void
     {
-        // 集成测试设置
+        // Services are auto-registered
     }
 
     /**
@@ -25,7 +32,6 @@ final class FundAuthUnfreezeLogListenerTest extends AbstractIntegrationTestCase
      */
     public function testListenerCanBeInstantiated(): void
     {
-        // 从容器中获取监听器服务
         $listener = self::getService(FundAuthUnfreezeLogListener::class);
         $this->assertInstanceOf(FundAuthUnfreezeLogListener::class, $listener);
     }
@@ -35,42 +41,54 @@ final class FundAuthUnfreezeLogListenerTest extends AbstractIntegrationTestCase
      */
     public function testListenerInjectsSdkServiceCorrectly(): void
     {
-        // 从容器中获取监听器服务
         $listener = self::getService(FundAuthUnfreezeLogListener::class);
 
         $reflectionClass = new \ReflectionClass($listener);
         $sdkServiceProperty = $reflectionClass->getProperty('sdkService');
         $sdkServiceProperty->setAccessible(true);
 
-        // 验证注入的 SdkService 是正确的实例
         $this->assertInstanceOf(SdkService::class, $sdkServiceProperty->getValue($listener));
     }
 
-    /**
-     * 测试prePersist方法存在
-     */
-    public function testListenerHasPrePersistMethod(): void
+    public function testPrePersistMethodExists(): void
     {
-        // 从容器中获取监听器服务
-        $listener = self::getService(FundAuthUnfreezeLogListener::class);
+        $reflectionClass = new \ReflectionClass(FundAuthUnfreezeLogListener::class);
 
-        $reflectionMethod = new \ReflectionMethod($listener, 'prePersist');
-        $this->assertTrue($reflectionMethod->isPublic());
-        $this->assertEquals(1, $reflectionMethod->getNumberOfParameters());
+        $this->assertTrue($reflectionClass->hasMethod('prePersist'));
+        $method = $reflectionClass->getMethod('prePersist');
+        $this->assertTrue($method->isPublic());
+        $this->assertCount(1, $method->getParameters());
     }
 
-    /**
-     * 测试prePersist方法
-     */
-    public function testPrePersist(): void
+    public function testListenerHasCorrectConstructorParameters(): void
     {
-        // 从容器中获取监听器服务
-        $listener = self::getService(FundAuthUnfreezeLogListener::class);
+        $reflectionClass = new \ReflectionClass(FundAuthUnfreezeLogListener::class);
+        $constructor = $reflectionClass->getConstructor();
 
-        // 检查 prePersist 方法存在且可调用，但不执行实际的 API 调用
-        $reflection = new \ReflectionMethod($listener, 'prePersist');
-        $this->assertTrue($reflection->isPublic());
-        $this->assertSame(1, $reflection->getNumberOfParameters());
-        $this->assertSame('prePersist', $reflection->getName());
+        $this->assertNotNull($constructor);
+        $parameters = $constructor->getParameters();
+
+        $this->assertGreaterThanOrEqual(3, count($parameters));
+
+        // Check SdkService parameter
+        $sdkServiceParam = $parameters[0];
+        $this->assertEquals('sdkService', $sdkServiceParam->getName());
+        $type = $sdkServiceParam->getType();
+        $this->assertInstanceOf(\ReflectionNamedType::class, $type);
+        $this->assertEquals(SdkService::class, $type->getName());
+
+        // Check LoggerInterface parameter
+        $loggerParam = $parameters[1];
+        $this->assertEquals('logger', $loggerParam->getName());
+        $type = $loggerParam->getType();
+        $this->assertInstanceOf(\ReflectionNamedType::class, $type);
+        $this->assertEquals(LoggerInterface::class, $type->getName());
+
+        // Check environment parameter
+        $envParam = $parameters[2];
+        $this->assertEquals('environment', $envParam->getName());
+        $type = $envParam->getType();
+        $this->assertInstanceOf(\ReflectionNamedType::class, $type);
+        $this->assertEquals('string', $type->getName());
     }
 }

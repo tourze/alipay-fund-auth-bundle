@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AlipayFundAuthBundle\Service;
 
 use Alipay\OpenAPISDK\Api\AlipayDataDataserviceBillDownloadurlApi;
@@ -9,52 +11,72 @@ use Alipay\OpenAPISDK\Util\AlipayConfigUtil;
 use Alipay\OpenAPISDK\Util\Model\AlipayConfig;
 use AlipayFundAuthBundle\Entity\Account;
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 
-class SdkService
+/**
+ * 支付宝SDK服务
+ *
+ * 提供支付宝API客户端的统一管理和配置
+ */
+final readonly class SdkService
 {
+    public function __construct(
+        private ClientInterface $client = new Client()
+    ) {
+    }
+
+    /**
+     * 获取支付宝配置工具类
+     */
     public function getAlipayConfigUtil(Account $account): AlipayConfigUtil
     {
-        // 设置alipayConfig参数（全局设置一次）
-        $alipayConfig = new AlipayConfig();
-        // 设置应用ID
-        $alipayConfig->setAppId($account->getAppId());
-        // 设置应用私钥
-        $alipayConfig->setPrivateKey($account->getRsaPrivateKey());
-        // 设置支付宝公钥
-        $alipayConfig->setAlipayPublicKey($account->getRsaPublicKey());
-
+        $alipayConfig = $this->createAlipayConfig($account);
         return new AlipayConfigUtil($alipayConfig);
     }
 
+    /**
+     * 获取资金授权API客户端
+     */
     public function getFundAuthOrderApi(Account $account): AlipayFundAuthOrderApi
     {
-        // 实例化客户端
-        $api = new AlipayFundAuthOrderApi($this->getClient());
+        $api = new AlipayFundAuthOrderApi($this->client);
         $api->setAlipayConfigUtil($this->getAlipayConfigUtil($account));
 
         return $api;
     }
 
+    /**
+     * 获取交易API客户端
+     */
     public function getTradeApi(Account $account): AlipayTradeApi
     {
-        // 实例化客户端
-        $api = new AlipayTradeApi($this->getClient());
+        $api = new AlipayTradeApi($this->client);
         $api->setAlipayConfigUtil($this->getAlipayConfigUtil($account));
 
         return $api;
     }
 
+    /**
+     * 获取账单下载API客户端
+     */
     public function getBillDownloadurlApi(Account $account): AlipayDataDataserviceBillDownloadurlApi
     {
-        // 实例化客户端
-        $api = new AlipayDataDataserviceBillDownloadurlApi($this->getClient());
+        $api = new AlipayDataDataserviceBillDownloadurlApi($this->client);
         $api->setAlipayConfigUtil($this->getAlipayConfigUtil($account));
 
         return $api;
     }
 
-    private function getClient(): Client
+    /**
+     * 创建支付宝配置
+     */
+    private function createAlipayConfig(Account $account): AlipayConfig
     {
-        return new Client();
+        $alipayConfig = new AlipayConfig();
+        $alipayConfig->setAppId($account->getAppId());
+        $alipayConfig->setPrivateKey($account->getRsaPrivateKey());
+        $alipayConfig->setAlipayPublicKey($account->getRsaPublicKey());
+
+        return $alipayConfig;
     }
 }

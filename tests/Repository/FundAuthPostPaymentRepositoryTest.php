@@ -380,6 +380,12 @@ final class FundAuthPostPaymentRepositoryTest extends AbstractRepositoryTestCase
         $this->assertSame($order1->getId(), $resultOrder->getId());
     }
 
+    public function testCreateWithRelationsQueryBuilder(): void
+    {
+        $queryBuilder = $this->repository->createWithRelationsQueryBuilder();
+        $this->assertInstanceOf(\Doctrine\ORM\QueryBuilder::class, $queryBuilder);
+    }
+
     private function createFundAuthOrder(string $suffix = ''): FundAuthOrder
     {
         $account = $this->createAccount($suffix);

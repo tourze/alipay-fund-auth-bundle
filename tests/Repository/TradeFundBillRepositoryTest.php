@@ -325,6 +325,58 @@ final class TradeFundBillRepositoryTest extends AbstractRepositoryTestCase
         $this->assertSame($tradeOrder1->getId(), $foundTradeOrder->getId());
     }
 
+    public function testCreateWithRelationsQueryBuilder(): void
+    {
+        $this->clearDatabase();
+
+        $tradeOrder1 = $this->createTradeOrder();
+        $tradeOrder2 = $this->createTradeOrder();
+
+        $bill1 = new TradeFundBill();
+        $bill1->setTradeOrder($tradeOrder1);
+        $bill1->setFundChannel('ALIPAYACCOUNT');
+        $bill1->setAmount('100.00');
+        $this->repository->save($bill1);
+
+        $bill2 = new TradeFundBill();
+        $bill2->setTradeOrder($tradeOrder2);
+        $bill2->setFundChannel('BANKCARD');
+        $bill2->setAmount('200.00');
+        $this->repository->save($bill2);
+
+        $queryBuilder = $this->repository->createWithRelationsQueryBuilder();
+        $results = $queryBuilder->getQuery()->getResult();
+
+        $this->assertCount(2, $results);
+        $this->assertContainsOnlyInstancesOf(TradeFundBill::class, $results);
+
+        foreach ($results as $bill) {
+            $this->assertInstanceOf(TradeOrder::class, $bill->getTradeOrder());
+            $this->assertNotNull($bill->getTradeOrder()->getId());
+        }
+
+        $bill1Result = array_values(array_filter($results, fn($b) => $b->getFundChannel() === 'ALIPAYACCOUNT'))[0];
+        $this->assertInstanceOf(TradeFundBill::class, $bill1Result);
+        $this->assertSame('100.00', $bill1Result->getAmount());
+        $this->assertSame($tradeOrder1->getId(), $bill1Result->getTradeOrder()->getId());
+    }
+
+    public function testFindByFundBillNo(): void
+    {
+        $this->clearDatabase();
+
+        $tradeOrder = $this->createTradeOrder();
+
+        $bill = new TradeFundBill();
+        $bill->setTradeOrder($tradeOrder);
+        $bill->setFundChannel('ALIPAYACCOUNT');
+        $bill->setAmount('150.00');
+        $this->repository->save($bill);
+
+        $this->expectException(\Doctrine\ORM\Persisters\Exception\UnrecognizedField::class);
+        $this->repository->findByFundBillNo('nonexistent_bill_no');
+    }
+
     /**
      * @return ServiceEntityRepository<TradeFundBill>
      */

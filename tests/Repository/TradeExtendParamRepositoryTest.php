@@ -297,6 +297,12 @@ final class TradeExtendParamRepositoryTest extends AbstractRepositoryTestCase
         $this->assertInstanceOf(TradeExtendParam::class, $foundParam);
     }
 
+    public function testCreateWithRelationsQueryBuilder(): void
+    {
+        $queryBuilder = $this->repository->createWithRelationsQueryBuilder();
+        $this->assertInstanceOf(\Doctrine\ORM\QueryBuilder::class, $queryBuilder);
+    }
+
     /**
      * @return ServiceEntityRepository<TradeExtendParam>
      */

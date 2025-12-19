@@ -291,6 +291,232 @@ final class AccountRepositoryTest extends AbstractRepositoryTestCase
         $this->assertSame(1, $countWithoutKey);
     }
 
+    public function testCountAll(): void
+    {
+        $this->clearDatabase();
+
+        $account1 = new Account();
+        $account1->setName('统计测试账号1');
+        $account1->setAppId('count_test_app_id_1');
+        $this->repository->save($account1);
+
+        $account2 = new Account();
+        $account2->setName('统计测试账号2');
+        $account2->setAppId('count_test_app_id_2');
+        $this->repository->save($account2);
+
+        $account3 = new Account();
+        $account3->setName('统计测试账号3');
+        $account3->setAppId('count_test_app_id_3');
+        $this->repository->save($account3);
+
+        $totalCount = $this->repository->countAll();
+        $this->assertSame(3, $totalCount);
+    }
+
+    public function testCountEnabled(): void
+    {
+        $this->clearDatabase();
+
+        $enabledAccount1 = new Account();
+        $enabledAccount1->setName('启用账号1');
+        $enabledAccount1->setAppId('enabled_app_id_1');
+        $enabledAccount1->setValid(true);
+        $this->repository->save($enabledAccount1);
+
+        $enabledAccount2 = new Account();
+        $enabledAccount2->setName('启用账号2');
+        $enabledAccount2->setAppId('enabled_app_id_2');
+        $enabledAccount2->setValid(true);
+        $this->repository->save($enabledAccount2);
+
+        $disabledAccount = new Account();
+        $disabledAccount->setName('禁用账号');
+        $disabledAccount->setAppId('disabled_app_id');
+        $disabledAccount->setValid(false);
+        $this->repository->save($disabledAccount);
+
+        $enabledCount = $this->repository->countEnabled();
+        $this->assertSame(2, $enabledCount);
+    }
+
+    public function testFindByAppId(): void
+    {
+        $this->clearDatabase();
+
+        $account = new Account();
+        $account->setName('AppID查找测试账号');
+        $account->setAppId('unique_app_id_12345');
+        $account->setValid(true);
+        $account->setRsaPrivateKey('test_private_key');
+        $this->repository->save($account);
+
+        $foundAccount = $this->repository->findByAppId('unique_app_id_12345');
+
+        $this->assertInstanceOf(Account::class, $foundAccount);
+        $this->assertSame('AppID查找测试账号', $foundAccount->getName());
+        $this->assertSame('unique_app_id_12345', $foundAccount->getAppId());
+        $this->assertTrue($foundAccount->isValid());
+        $this->assertSame('test_private_key', $foundAccount->getRsaPrivateKey());
+    }
+
+    public function testFindByAppIdReturnsNullWhenNotFound(): void
+    {
+        $this->clearDatabase();
+
+        $foundAccount = $this->repository->findByAppId('non_existent_app_id');
+
+        $this->assertNull($foundAccount);
+    }
+
+    public function testFindDisabled(): void
+    {
+        $this->clearDatabase();
+
+        $enabledAccount = new Account();
+        $enabledAccount->setName('启用账号');
+        $enabledAccount->setAppId('enabled_app_id');
+        $enabledAccount->setValid(true);
+        $this->repository->save($enabledAccount);
+
+        $disabledAccount1 = new Account();
+        $disabledAccount1->setName('禁用账号1');
+        $disabledAccount1->setAppId('disabled_app_id_1');
+        $disabledAccount1->setValid(false);
+        $this->repository->save($disabledAccount1);
+
+        $disabledAccount2 = new Account();
+        $disabledAccount2->setName('禁用账号2');
+        $disabledAccount2->setAppId('disabled_app_id_2');
+        $disabledAccount2->setValid(false);
+        $this->repository->save($disabledAccount2);
+
+        $disabledAccounts = $this->repository->findDisabled();
+
+        $this->assertCount(2, $disabledAccounts);
+        $names = array_map(fn (Account $a) => $a->getName(), $disabledAccounts);
+        $this->assertContains('禁用账号1', $names);
+        $this->assertContains('禁用账号2', $names);
+    }
+
+    public function testFindEnabled(): void
+    {
+        $this->clearDatabase();
+
+        $enabledAccount1 = new Account();
+        $enabledAccount1->setName('启用账号1');
+        $enabledAccount1->setAppId('enabled_app_id_1');
+        $enabledAccount1->setValid(true);
+        $this->repository->save($enabledAccount1);
+
+        $enabledAccount2 = new Account();
+        $enabledAccount2->setName('启用账号2');
+        $enabledAccount2->setAppId('enabled_app_id_2');
+        $enabledAccount2->setValid(true);
+        $this->repository->save($enabledAccount2);
+
+        $disabledAccount = new Account();
+        $disabledAccount->setName('禁用账号');
+        $disabledAccount->setAppId('disabled_app_id');
+        $disabledAccount->setValid(false);
+        $this->repository->save($disabledAccount);
+
+        $enabledAccounts = $this->repository->findEnabled();
+
+        $this->assertCount(2, $enabledAccounts);
+        $names = array_map(fn (Account $a) => $a->getName(), $enabledAccounts);
+        $this->assertContains('启用账号1', $names);
+        $this->assertContains('启用账号2', $names);
+    }
+
+    public function testFindByNameContaining(): void
+    {
+        $this->clearDatabase();
+
+        $account1 = new Account();
+        $account1->setName('测试账号ABC');
+        $account1->setAppId('test_app_id_1');
+        $this->repository->save($account1);
+
+        $account2 = new Account();
+        $account2->setName('生产账号ABC');
+        $account2->setAppId('test_app_id_2');
+        $this->repository->save($account2);
+
+        $account3 = new Account();
+        $account3->setName('开发账号XYZ');
+        $account3->setAppId('test_app_id_3');
+        $this->repository->save($account3);
+
+        $matchingAccounts = $this->repository->findByNameContaining('ABC');
+
+        $this->assertCount(2, $matchingAccounts);
+        $names = array_map(fn (Account $a) => $a->getName(), $matchingAccounts);
+        $this->assertContains('测试账号ABC', $names);
+        $this->assertContains('生产账号ABC', $names);
+    }
+
+    public function testFindByNameContainingReturnsEmptyArrayWhenNoMatch(): void
+    {
+        $this->clearDatabase();
+
+        $account = new Account();
+        $account->setName('测试账号');
+        $account->setAppId('test_app_id');
+        $this->repository->save($account);
+
+        $matchingAccounts = $this->repository->findByNameContaining('不存在的关键词');
+
+        $this->assertIsArray($matchingAccounts);
+        $this->assertCount(0, $matchingAccounts);
+    }
+
+    public function testFindRecent(): void
+    {
+        $this->clearDatabase();
+
+        $account1 = new Account();
+        $account1->setName('最早的账号');
+        $account1->setAppId('oldest_app_id');
+        $this->repository->save($account1);
+
+        sleep(1);
+
+        $account2 = new Account();
+        $account2->setName('中间的账号');
+        $account2->setAppId('middle_app_id');
+        $this->repository->save($account2);
+
+        sleep(1);
+
+        $account3 = new Account();
+        $account3->setName('最新的账号');
+        $account3->setAppId('newest_app_id');
+        $this->repository->save($account3);
+
+        $recentAccounts = $this->repository->findRecent(2);
+
+        $this->assertCount(2, $recentAccounts);
+        $this->assertSame('最新的账号', $recentAccounts[0]->getName());
+        $this->assertSame('中间的账号', $recentAccounts[1]->getName());
+    }
+
+    public function testFindRecentWithDefaultLimit(): void
+    {
+        $this->clearDatabase();
+
+        for ($i = 1; $i <= 12; ++$i) {
+            $account = new Account();
+            $account->setName("账号{$i}");
+            $account->setAppId("app_id_{$i}");
+            $this->repository->save($account);
+        }
+
+        $recentAccounts = $this->repository->findRecent();
+
+        $this->assertCount(10, $recentAccounts);
+    }
+
     private function clearDatabase(): void
     {
         $entityManager = self::getEntityManager();

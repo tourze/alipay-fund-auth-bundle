@@ -26,11 +26,11 @@ final class TradeOrderResultUpdaterTest extends TestCase
 
     public function testUpdateFromResultWithNonObject(): void
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Result must be an object');
+
         $tradeOrder = new TradeOrder();
         $this->updater->updateFromResult($tradeOrder, 'invalid');
-
-        // Should not throw exception and not modify order
-        $this->assertNull($tradeOrder->getTradeNo());
     }
 
     public function testUpdateFromResultWithValidObject(): void

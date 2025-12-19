@@ -424,6 +424,79 @@ final class TradeVoucherDetailRepositoryTest extends AbstractRepositoryTestCase
         $this->assertSame($tradeOrder1->getId(), $foundVoucher->getTradeOrder()->getId());
     }
 
+    public function testCreateWithRelationsQueryBuilderShouldFetchWithJoin(): void
+    {
+        $this->clearDatabase();
+
+        $tradeOrder = $this->createTradeOrder();
+
+        $voucherDetail = new TradeVoucherDetail();
+        $voucherDetail->setTradeOrder($tradeOrder);
+        $voucherDetail->setVoucherId('test_voucher_with_relation');
+        $voucherDetail->setName('测试关联查询优惠券');
+        $voucherDetail->setType(VoucherType::ALIPAY_FIX_VOUCHER);
+        $voucherDetail->setAmount('50.00');
+        $this->repository->save($voucherDetail);
+
+        $queryBuilder = $this->repository->createWithRelationsQueryBuilder();
+        $results = $queryBuilder->getQuery()->getResult();
+
+        $this->assertCount(1, $results);
+        $this->assertInstanceOf(TradeVoucherDetail::class, $results[0]);
+        $this->assertSame('test_voucher_with_relation', $results[0]->getVoucherId());
+
+        $tradeOrderFromResult = $results[0]->getTradeOrder();
+        $this->assertInstanceOf(TradeOrder::class, $tradeOrderFromResult);
+        $this->assertSame($tradeOrder->getId(), $tradeOrderFromResult->getId());
+    }
+
+    public function testFindByVoucherIdShouldReturnMatchingRecords(): void
+    {
+        $this->clearDatabase();
+
+        $tradeOrder = $this->createTradeOrder();
+
+        $voucherDetail1 = new TradeVoucherDetail();
+        $voucherDetail1->setTradeOrder($tradeOrder);
+        $voucherDetail1->setVoucherId('duplicate_voucher_id');
+        $voucherDetail1->setName('优惠券1');
+        $voucherDetail1->setType(VoucherType::ALIPAY_FIX_VOUCHER);
+        $voucherDetail1->setAmount('10.00');
+        $this->repository->save($voucherDetail1);
+
+        $voucherDetail2 = new TradeVoucherDetail();
+        $voucherDetail2->setTradeOrder($tradeOrder);
+        $voucherDetail2->setVoucherId('duplicate_voucher_id');
+        $voucherDetail2->setName('优惠券2');
+        $voucherDetail2->setType(VoucherType::ALIPAY_DISCOUNT_VOUCHER);
+        $voucherDetail2->setAmount('20.00');
+        $this->repository->save($voucherDetail2);
+
+        $voucherDetail3 = new TradeVoucherDetail();
+        $voucherDetail3->setTradeOrder($tradeOrder);
+        $voucherDetail3->setVoucherId('unique_voucher_id');
+        $voucherDetail3->setName('优惠券3');
+        $voucherDetail3->setType(VoucherType::ALIPAY_FIX_VOUCHER);
+        $voucherDetail3->setAmount('30.00');
+        $this->repository->save($voucherDetail3);
+
+        $duplicateResults = $this->repository->findByVoucherId('duplicate_voucher_id');
+        $this->assertCount(2, $duplicateResults);
+        $this->assertContainsOnlyInstancesOf(TradeVoucherDetail::class, $duplicateResults);
+
+        $voucherIds = array_map(fn (TradeVoucherDetail $v) => $v->getVoucherId(), $duplicateResults);
+        $this->assertSame(['duplicate_voucher_id', 'duplicate_voucher_id'], $voucherIds);
+
+        $uniqueResults = $this->repository->findByVoucherId('unique_voucher_id');
+        $this->assertCount(1, $uniqueResults);
+        $this->assertSame('unique_voucher_id', $uniqueResults[0]->getVoucherId());
+        $this->assertSame('优惠券3', $uniqueResults[0]->getName());
+
+        $notFoundResults = $this->repository->findByVoucherId('non_existent_voucher');
+        $this->assertCount(0, $notFoundResults);
+        $this->assertSame([], $notFoundResults);
+    }
+
     /**
      * @return ServiceEntityRepository<TradeVoucherDetail>
      */

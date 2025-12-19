@@ -532,6 +532,336 @@ final class FundAuthOrderRepositoryTest extends AbstractRepositoryTestCase
         $this->assertSame($account1->getId(), $resultAccount->getId());
     }
 
+    public function testCreateWithRelationsQueryBuilder(): void
+    {
+        $this->clearDatabase();
+
+        $account = $this->createAccount();
+
+        $order = new FundAuthOrder();
+        $order->setAccount($account);
+        $order->setOutOrderNo('test_order_qb');
+        $order->setOutRequestNo('test_request_qb');
+        $order->setOrderTitle('测试QueryBuilder订单');
+        $order->setAmount('100.00');
+        $order->setStatus(FundAuthOrderStatus::SUCCESS);
+        $this->repository->save($order);
+
+        $queryBuilder = $this->repository->createWithRelationsQueryBuilder();
+        $this->assertInstanceOf(\Doctrine\ORM\QueryBuilder::class, $queryBuilder);
+
+        $results = $queryBuilder->getQuery()->getResult();
+        $this->assertCount(1, $results);
+        $this->assertInstanceOf(FundAuthOrder::class, $results[0]);
+        $this->assertSame('测试QueryBuilder订单', $results[0]->getOrderTitle());
+        $this->assertInstanceOf(Account::class, $results[0]->getAccount());
+    }
+
+    public function testFindByAuthNo(): void
+    {
+        $this->clearDatabase();
+
+        $account = $this->createAccount();
+
+        $order1 = new FundAuthOrder();
+        $order1->setAccount($account);
+        $order1->setOutOrderNo('auth_order_1');
+        $order1->setOutRequestNo('auth_request_1');
+        $order1->setOrderTitle('有授权号订单1');
+        $order1->setAmount('100.00');
+        $order1->setAuthNo('auth_no_12345');
+        $this->repository->save($order1);
+
+        $order2 = new FundAuthOrder();
+        $order2->setAccount($account);
+        $order2->setOutOrderNo('auth_order_2');
+        $order2->setOutRequestNo('auth_request_2');
+        $order2->setOrderTitle('无授权号订单2');
+        $order2->setAmount('200.00');
+        $this->repository->save($order2);
+
+        $foundOrder = $this->repository->findByAuthNo('auth_no_12345');
+        $this->assertInstanceOf(FundAuthOrder::class, $foundOrder);
+        $this->assertSame('有授权号订单1', $foundOrder->getOrderTitle());
+        $this->assertSame('auth_no_12345', $foundOrder->getAuthNo());
+
+        $notFoundOrder = $this->repository->findByAuthNo('non_existent_auth_no');
+        $this->assertNull($notFoundOrder);
+    }
+
+    public function testFindByDateRange(): void
+    {
+        $this->clearDatabase();
+
+        $account = $this->createAccount();
+
+        $oldTime = new \DateTimeImmutable('-1 day');
+        $oldOrder = new FundAuthOrder();
+        $oldOrder->setAccount($account);
+        $oldOrder->setOutOrderNo('old_order');
+        $oldOrder->setOutRequestNo('old_request');
+        $oldOrder->setOrderTitle('旧订单');
+        $oldOrder->setAmount('100.00');
+        $oldOrder->setGmtTrans($oldTime);
+        $this->repository->save($oldOrder);
+
+        $startTime = new \DateTimeImmutable('-1 hour');
+        $now = new \DateTimeImmutable();
+
+        $newOrder1 = new FundAuthOrder();
+        $newOrder1->setAccount($account);
+        $newOrder1->setOutOrderNo('new_order_1');
+        $newOrder1->setOutRequestNo('new_request_1');
+        $newOrder1->setOrderTitle('新订单1');
+        $newOrder1->setAmount('200.00');
+        $newOrder1->setGmtTrans($now);
+        $this->repository->save($newOrder1);
+
+        $newOrder2 = new FundAuthOrder();
+        $newOrder2->setAccount($account);
+        $newOrder2->setOutOrderNo('new_order_2');
+        $newOrder2->setOutRequestNo('new_request_2');
+        $newOrder2->setOrderTitle('新订单2');
+        $newOrder2->setAmount('300.00');
+        $newOrder2->setGmtTrans($now);
+        $this->repository->save($newOrder2);
+
+        $endTime = new \DateTimeImmutable('+1 hour');
+
+        $results = $this->repository->findByDateRange($startTime, $endTime);
+        $this->assertCount(2, $results);
+
+        $titles = array_map(fn($order) => $order->getOrderTitle(), $results);
+        $this->assertContains('新订单1', $titles);
+        $this->assertContains('新订单2', $titles);
+        $this->assertNotContains('旧订单', $titles);
+    }
+
+    public function testFindByOperationId(): void
+    {
+        $this->clearDatabase();
+
+        $account = $this->createAccount();
+
+        $order1 = new FundAuthOrder();
+        $order1->setAccount($account);
+        $order1->setOutOrderNo('op_order_1');
+        $order1->setOutRequestNo('op_request_1');
+        $order1->setOrderTitle('有操作ID订单');
+        $order1->setAmount('100.00');
+        $order1->setOperationId('op_id_67890');
+        $this->repository->save($order1);
+
+        $order2 = new FundAuthOrder();
+        $order2->setAccount($account);
+        $order2->setOutOrderNo('op_order_2');
+        $order2->setOutRequestNo('op_request_2');
+        $order2->setOrderTitle('无操作ID订单');
+        $order2->setAmount('200.00');
+        $this->repository->save($order2);
+
+        $foundOrder = $this->repository->findByOperationId('op_id_67890');
+        $this->assertInstanceOf(FundAuthOrder::class, $foundOrder);
+        $this->assertSame('有操作ID订单', $foundOrder->getOrderTitle());
+        $this->assertSame('op_id_67890', $foundOrder->getOperationId());
+
+        $notFoundOrder = $this->repository->findByOperationId('non_existent_op_id');
+        $this->assertNull($notFoundOrder);
+    }
+
+    public function testFindByOrderTitleKeyword(): void
+    {
+        $this->clearDatabase();
+
+        $account = $this->createAccount();
+
+        $order1 = new FundAuthOrder();
+        $order1->setAccount($account);
+        $order1->setOutOrderNo('keyword_order_1');
+        $order1->setOutRequestNo('keyword_request_1');
+        $order1->setOrderTitle('这是一个测试订单');
+        $order1->setAmount('100.00');
+        $this->repository->save($order1);
+
+        $order2 = new FundAuthOrder();
+        $order2->setAccount($account);
+        $order2->setOutOrderNo('keyword_order_2');
+        $order2->setOutRequestNo('keyword_request_2');
+        $order2->setOrderTitle('这是另一个测试订单');
+        $order2->setAmount('200.00');
+        $this->repository->save($order2);
+
+        $order3 = new FundAuthOrder();
+        $order3->setAccount($account);
+        $order3->setOutOrderNo('keyword_order_3');
+        $order3->setOutRequestNo('keyword_request_3');
+        $order3->setOrderTitle('完全不同的订单');
+        $order3->setAmount('300.00');
+        $this->repository->save($order3);
+
+        $results = $this->repository->findByOrderTitleKeyword('测试');
+        $this->assertCount(2, $results);
+
+        $titles = array_map(fn($order) => $order->getOrderTitle(), $results);
+        $this->assertContains('这是一个测试订单', $titles);
+        $this->assertContains('这是另一个测试订单', $titles);
+        $this->assertNotContains('完全不同的订单', $titles);
+    }
+
+    public function testFindByOutOrderNo(): void
+    {
+        $this->clearDatabase();
+
+        $account = $this->createAccount();
+
+        $order = new FundAuthOrder();
+        $order->setAccount($account);
+        $order->setOutOrderNo('out_order_unique_123');
+        $order->setOutRequestNo('out_request_123');
+        $order->setOrderTitle('根据OutOrderNo查找的订单');
+        $order->setAmount('100.00');
+        $this->repository->save($order);
+
+        $foundOrder = $this->repository->findByOutOrderNo('out_order_unique_123');
+        $this->assertInstanceOf(FundAuthOrder::class, $foundOrder);
+        $this->assertSame('根据OutOrderNo查找的订单', $foundOrder->getOrderTitle());
+        $this->assertSame('out_order_unique_123', $foundOrder->getOutOrderNo());
+
+        $notFoundOrder = $this->repository->findByOutOrderNo('non_existent_out_order');
+        $this->assertNull($notFoundOrder);
+    }
+
+    public function testFindByPayerUserId(): void
+    {
+        $this->clearDatabase();
+
+        $account = $this->createAccount();
+
+        $order1 = new FundAuthOrder();
+        $order1->setAccount($account);
+        $order1->setOutOrderNo('payer_order_1');
+        $order1->setOutRequestNo('payer_request_1');
+        $order1->setOrderTitle('付款用户1的订单1');
+        $order1->setAmount('100.00');
+        $order1->setPayerUserId('payer_user_123');
+        $this->repository->save($order1);
+
+        $order2 = new FundAuthOrder();
+        $order2->setAccount($account);
+        $order2->setOutOrderNo('payer_order_2');
+        $order2->setOutRequestNo('payer_request_2');
+        $order2->setOrderTitle('付款用户1的订单2');
+        $order2->setAmount('150.00');
+        $order2->setPayerUserId('payer_user_123');
+        $this->repository->save($order2);
+
+        $order3 = new FundAuthOrder();
+        $order3->setAccount($account);
+        $order3->setOutOrderNo('payer_order_3');
+        $order3->setOutRequestNo('payer_request_3');
+        $order3->setOrderTitle('付款用户2的订单');
+        $order3->setAmount('200.00');
+        $order3->setPayerUserId('payer_user_456');
+        $this->repository->save($order3);
+
+        $results = $this->repository->findByPayerUserId('payer_user_123');
+        $this->assertCount(2, $results);
+
+        $titles = array_map(fn($order) => $order->getOrderTitle(), $results);
+        $this->assertContains('付款用户1的订单1', $titles);
+        $this->assertContains('付款用户1的订单2', $titles);
+        $this->assertNotContains('付款用户2的订单', $titles);
+    }
+
+    public function testFindExpiredOrders(): void
+    {
+        $this->clearDatabase();
+
+        $account = $this->createAccount();
+
+        // 过期订单：INIT 状态且没有交易时间（gmtTrans 为 null）
+        $expiredOrder = new FundAuthOrder();
+        $expiredOrder->setAccount($account);
+        $expiredOrder->setOutOrderNo('expired_order');
+        $expiredOrder->setOutRequestNo('expired_request');
+        $expiredOrder->setOrderTitle('过期订单');
+        $expiredOrder->setAmount('100.00');
+        $expiredOrder->setStatus(FundAuthOrderStatus::INIT);
+        // 不设置 gmtTrans，表示还未交易
+        $this->repository->save($expiredOrder);
+
+        $expireTime = new \DateTimeImmutable();
+
+        // 已交易订单：INIT 状态但有交易时间，不应被视为过期
+        $transactedOrder = new FundAuthOrder();
+        $transactedOrder->setAccount($account);
+        $transactedOrder->setOutOrderNo('transacted_order');
+        $transactedOrder->setOutRequestNo('transacted_request');
+        $transactedOrder->setOrderTitle('已交易订单');
+        $transactedOrder->setAmount('200.00');
+        $transactedOrder->setStatus(FundAuthOrderStatus::INIT);
+        $transactedOrder->setGmtTrans(new \DateTimeImmutable());
+        $this->repository->save($transactedOrder);
+
+        // 成功订单：不应被包含在过期订单中
+        $successOrder = new FundAuthOrder();
+        $successOrder->setAccount($account);
+        $successOrder->setOutOrderNo('success_order');
+        $successOrder->setOutRequestNo('success_request');
+        $successOrder->setOrderTitle('成功订单');
+        $successOrder->setAmount('300.00');
+        $successOrder->setStatus(FundAuthOrderStatus::SUCCESS);
+        $this->repository->save($successOrder);
+
+        $results = $this->repository->findExpiredOrders($expireTime);
+        $this->assertCount(1, $results);
+        $this->assertSame('过期订单', $results[0]->getOrderTitle());
+        $this->assertSame(FundAuthOrderStatus::INIT, $results[0]->getStatus());
+        $this->assertNull($results[0]->getGmtTrans());
+    }
+
+    public function testFindPendingOrders(): void
+    {
+        $this->clearDatabase();
+
+        $account = $this->createAccount();
+
+        $initOrder = new FundAuthOrder();
+        $initOrder->setAccount($account);
+        $initOrder->setOutOrderNo('init_order');
+        $initOrder->setOutRequestNo('init_request');
+        $initOrder->setOrderTitle('初始状态订单');
+        $initOrder->setAmount('100.00');
+        $initOrder->setStatus(FundAuthOrderStatus::INIT);
+        $this->repository->save($initOrder);
+
+        $closedOrder = new FundAuthOrder();
+        $closedOrder->setAccount($account);
+        $closedOrder->setOutOrderNo('closed_order');
+        $closedOrder->setOutRequestNo('closed_request');
+        $closedOrder->setOrderTitle('关闭状态订单');
+        $closedOrder->setAmount('200.00');
+        $closedOrder->setStatus(FundAuthOrderStatus::CLOSED);
+        $this->repository->save($closedOrder);
+
+        $successOrder = new FundAuthOrder();
+        $successOrder->setAccount($account);
+        $successOrder->setOutOrderNo('success_order_pending');
+        $successOrder->setOutRequestNo('success_request_pending');
+        $successOrder->setOrderTitle('成功状态订单');
+        $successOrder->setAmount('300.00');
+        $successOrder->setStatus(FundAuthOrderStatus::SUCCESS);
+        $this->repository->save($successOrder);
+
+        $results = $this->repository->findPendingOrders();
+        $this->assertCount(2, $results);
+
+        $titles = array_map(fn($order) => $order->getOrderTitle(), $results);
+        $this->assertContains('初始状态订单', $titles);
+        $this->assertContains('关闭状态订单', $titles);
+        $this->assertNotContains('成功状态订单', $titles);
+    }
+
     private function createAccount(string $name = '测试账号', string $appId = 'test_app_id'): Account
     {
         $account = new Account();

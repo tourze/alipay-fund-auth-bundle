@@ -2,6 +2,6 @@
 
 namespace AlipayFundAuthBundle\Exception;
 
-class InvalidFundAuthOrderException extends \Exception
+final class InvalidFundAuthOrderException extends \Exception
 {
 }

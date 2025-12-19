@@ -278,6 +278,12 @@ final class TradePromoParamRepositoryTest extends AbstractRepositoryTestCase
         $this->assertSame($tradeOrder1->getId(), $foundParam->getTradeOrder()->getId());
     }
 
+    public function testCreateWithRelationsQueryBuilder(): void
+    {
+        $queryBuilder = $this->repository->createWithRelationsQueryBuilder();
+        $this->assertInstanceOf(\Doctrine\ORM\QueryBuilder::class, $queryBuilder);
+    }
+
     /**
      * @return ServiceEntityRepository<TradePromoParam>
      */

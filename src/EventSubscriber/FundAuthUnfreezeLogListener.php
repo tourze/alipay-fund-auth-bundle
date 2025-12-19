@@ -6,19 +6,38 @@ use Alipay\OpenAPISDK\Api\AlipayFundAuthOrderApi;
 use Alipay\OpenAPISDK\Model\AlipayFundAuthOrderUnfreezeDefaultResponse;
 use Alipay\OpenAPISDK\Model\AlipayFundAuthOrderUnfreezeModel;
 use Alipay\OpenAPISDK\Model\AlipayFundAuthOrderUnfreezeResponseModel;
+use AlipayFundAuthBundle\Entity\Account;
+use AlipayFundAuthBundle\Entity\FundAuthOrder;
 use AlipayFundAuthBundle\Entity\FundAuthUnfreezeLog;
 use AlipayFundAuthBundle\Exception\InvalidFundAuthOrderException;
 use AlipayFundAuthBundle\Service\SdkService;
 use Carbon\CarbonImmutable;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsEntityListener;
 use Doctrine\ORM\Events;
+use Monolog\Attribute\WithMonologChannel;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Throwable;
 
 #[AsEntityListener(event: Events::prePersist, method: 'prePersist', entity: FundAuthUnfreezeLog::class)]
-class FundAuthUnfreezeLogListener
+#[WithMonologChannel(channel: 'alipay_fund_auth')]
+final class FundAuthUnfreezeLogListener
 {
-    public function __construct(private readonly SdkService $sdkService, private readonly string $environment = 'prod')
-    {
+    private const SKIP_ENVIRONMENTS = ['test', 'dev'];
+
+    public function __construct(
+        private readonly SdkService $sdkService,
+        private readonly LoggerInterface $logger,
+        #[Autowire(param: 'kernel.environment')]
+        ?string $environment = null,
+    ) {
+        $this->environment = $environment ?? 'prod';
     }
+
+    /**
+     * @var string
+     */
+    private string $environment;
 
     /**
      * 创建本地前，同步一次到远程
@@ -27,16 +46,30 @@ class FundAuthUnfreezeLogListener
      */
     public function prePersist(FundAuthUnfreezeLog $object): void
     {
-        if (in_array($this->environment, ['test', 'dev'], true)) {
+        if (in_array($this->environment, self::SKIP_ENVIRONMENTS, true)) {
+            $this->logger->debug('Skipping FundAuthUnfreezeLog persistence in {env} environment', [
+                'env' => $this->environment,
+                'requestNo' => $object->getOutRequestNo(),
+            ]);
+
             return;
         }
 
-        $this->validateRequiredEntities($object);
-        $api = $this->getAuthOrderApi($object);
-        $model = $this->buildUnfreezeModel($object);
-        /** @var AlipayFundAuthOrderUnfreezeResponseModel<mixed, mixed>|AlipayFundAuthOrderUnfreezeDefaultResponse<mixed, mixed> $result */
-        $result = $api->unfreeze($model);
-        $this->updateObjectFromResult($object, $result);
+        try {
+            $this->validateRequiredEntities($object);
+            $api = $this->getAuthOrderApi($object);
+            $model = $this->buildUnfreezeModel($object);
+            /** @var AlipayFundAuthOrderUnfreezeResponseModel<mixed, mixed>|AlipayFundAuthOrderUnfreezeDefaultResponse<mixed, mixed> $result */
+            $result = $api->unfreeze($model);
+            $this->updateObjectFromResult($object, $result);
+        } catch (\Throwable $e) {
+            $this->logger->error('Failed to unfreeze fund auth order', [
+                'requestNo' => $object->getOutRequestNo(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 
     private function validateRequiredEntities(FundAuthUnfreezeLog $object): void
@@ -56,15 +89,8 @@ class FundAuthUnfreezeLogListener
      */
     private function getAuthOrderApi(FundAuthUnfreezeLog $object): AlipayFundAuthOrderApi
     {
-        $fundAuthOrder = $object->getFundAuthOrder();
-        if (null === $fundAuthOrder) {
-            throw new InvalidFundAuthOrderException('FundAuthOrder is required');
-        }
-
-        $account = $fundAuthOrder->getAccount();
-        if (null === $account) {
-            throw new InvalidFundAuthOrderException('Account is required');
-        }
+        $fundAuthOrder = $this->getFundAuthOrder($object);
+        $account = $this->getAccount($fundAuthOrder);
 
         return $this->sdkService->getFundAuthOrderApi($account);
     }
@@ -74,10 +100,7 @@ class FundAuthUnfreezeLogListener
      */
     private function buildUnfreezeModel(FundAuthUnfreezeLog $object): AlipayFundAuthOrderUnfreezeModel
     {
-        $fundAuthOrder = $object->getFundAuthOrder();
-        if (null === $fundAuthOrder) {
-            throw new InvalidFundAuthOrderException('FundAuthOrder is required');
-        }
+        $fundAuthOrder = $this->getFundAuthOrder($object);
 
         $model = new AlipayFundAuthOrderUnfreezeModel();
         $model->setAuthNo($fundAuthOrder->getAuthNo());
@@ -91,6 +114,32 @@ class FundAuthUnfreezeLogListener
     }
 
     /**
+     * @throws InvalidFundAuthOrderException
+     */
+    private function getFundAuthOrder(FundAuthUnfreezeLog $object): FundAuthOrder
+    {
+        $fundAuthOrder = $object->getFundAuthOrder();
+        if (null === $fundAuthOrder) {
+            throw new InvalidFundAuthOrderException('FundAuthOrder is required');
+        }
+
+        return $fundAuthOrder;
+    }
+
+    /**
+     * @throws InvalidFundAuthOrderException
+     */
+    private function getAccount(FundAuthOrder $fundAuthOrder): Account
+    {
+        $account = $fundAuthOrder->getAccount();
+        if (null === $account) {
+            throw new InvalidFundAuthOrderException('Account is required');
+        }
+
+        return $account;
+    }
+
+    /**
      * @param AlipayFundAuthOrderUnfreezeModel<mixed, mixed> $model
      */
     private function setExtraParamIfPresent(AlipayFundAuthOrderUnfreezeModel $model, FundAuthUnfreezeLog $object): void
@@ -100,10 +149,8 @@ class FundAuthUnfreezeLogListener
             return;
         }
 
-        $jsonExtraParam = json_encode($extraParam);
-        if (false !== $jsonExtraParam) {
-            $model->setExtraParam($jsonExtraParam);
-        }
+        $jsonExtraParam = json_encode($extraParam, JSON_THROW_ON_ERROR);
+        $model->setExtraParam($jsonExtraParam);
     }
 
     private function updateObjectFromResult(FundAuthUnfreezeLog $object, mixed $result): void
